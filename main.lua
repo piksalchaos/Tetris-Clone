@@ -20,12 +20,14 @@ function love.update(dt)
 end
 
 function love.keypressed(key)
-    if key == 'a' then
-        --moveActiveTiles(-1, 0)
+    if key == 'q' then
+        love.event.quit()
     end
-    if key == 'd' then
-        --moveActiveTiles(1, 0)
-    end
+    tileManager:keypressed(key)
+end
+
+function love.keyreleased(key)
+    tileManager:keyreleased(key)
 end
 
 function love.draw()

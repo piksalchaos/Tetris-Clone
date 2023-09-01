@@ -30,4 +30,14 @@ function Timer:isFinished()
     return self.count <= 0
 end
 
+function Timer:setDuration(newDuration)
+    self.maxDuration = newDuration
+    self.count = newDuration
+end
+
+function Timer:stop()
+    self.isRunning = false
+    self.count = self.maxDuration
+end
+
 return Timer
