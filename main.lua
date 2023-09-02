@@ -12,7 +12,14 @@ function love.load()
 
     local TileManager = require 'TileManager'
     tileManager = TileManager.new()
-    tileManager:newTile(0, 0, true)
+    tileManager:newTile(1, 0, true)
+    tileManager:newTile(0, 1, true)
+    tileManager:newTile(1, 1, true)
+    tileManager:newTile(2, 1, true)
+    tileManager:newTile(3, 1, true)
+    tileManager:newTile(5, 10, false)
+    tileManager:newTile(6, 10, false)
+    tileManager:newTile(7, 10, false)
 end
 
 function love.update(dt)
@@ -39,7 +46,20 @@ function love.draw()
         boardTileHeight * tilePixelLength
     )
 
-    for i, tile in ipairs(tileManager.tiles) do
+    if tileManager:aboutToSettle() then
+        love.graphics.setColor(1, 1, 1, 0.5)
+    end
+    for _, tile in ipairs(tileManager.activeTiles) do
+        love.graphics.rectangle(
+            'fill',
+            tile.x * tilePixelLength + boardDrawPosition.x,
+            tile.y * tilePixelLength + boardDrawPosition.y,
+            tilePixelLength,
+            tilePixelLength
+        )
+    end
+    love.graphics.setColor(1, 1, 1)
+    for _, tile in ipairs(tileManager.idleTiles) do
         love.graphics.rectangle(
             'fill',
             tile.x * tilePixelLength + boardDrawPosition.x,

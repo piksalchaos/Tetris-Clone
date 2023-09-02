@@ -6,29 +6,31 @@ function Timer.new(duration, isRunning, isLoop)
     self.maxDuration = duration
     self.count = duration
     self.isLoop = isLoop or false
-    self.isRunning = isRunning or false
+    self.running = isRunning or false
     return self
 end
 
 function Timer:update(dt)
     if self:isFinished() then
         self.count = self.count + self.maxDuration
-        self.isRunning = self.isLoop
+        self.running = self.isLoop
     end
 
-    if self.isRunning then
+    if self.running then
         self.count = self.count - dt
     end
 end
 
 function Timer:start()
     self.count = self.maxDuration
-    self.isRunning = true
+    self.running = true
 end
 
 function Timer:isFinished()
     return self.count <= 0
 end
+
+function Timer:isRunning() return self.running end
 
 function Timer:setDuration(newDuration)
     self.maxDuration = newDuration
@@ -36,7 +38,7 @@ function Timer:setDuration(newDuration)
 end
 
 function Timer:stop()
-    self.isRunning = false
+    self.running = false
     self.count = self.maxDuration
 end
 
