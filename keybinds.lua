@@ -1,8 +1,8 @@
 local keybinds = {
     moveLeft = 'left',
     moveRight = 'right',
-    rotateRight = 'up',
-    rotateLeft = 'z',
+    rotateClockwise = 'up',
+    rotateCounterClockwise = 'z',
     softDrop = 'down',
     hardDrop = 'space',
     hold = 'c'

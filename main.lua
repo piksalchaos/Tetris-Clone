@@ -9,17 +9,11 @@ local tileManager
 
 function love.load()
     love.graphics.setDefaultFilter('nearest', 'nearest')
+    math.randomseed(os.time())
 
     local TileManager = require 'TileManager'
     tileManager = TileManager.new()
-    tileManager:newTile(1, 0, true)
-    tileManager:newTile(0, 1, true)
-    tileManager:newTile(1, 1, true)
-    tileManager:newTile(2, 1, true)
-    tileManager:newTile(3, 1, true)
-    tileManager:newTile(5, 10, false)
-    tileManager:newTile(6, 10, false)
-    tileManager:newTile(7, 10, false)
+    tileManager:newTetrimino()
 end
 
 function love.update(dt)
@@ -46,6 +40,16 @@ function love.draw()
         boardTileHeight * tilePixelLength
     )
 
+    love.graphics.setColor(1, 1, 1, 0.25)
+    love.graphics.rectangle(
+        'fill',
+        tileManager.tetriminoRect.x * tilePixelLength + boardDrawPosition.x,
+        tileManager.tetriminoRect.y * tilePixelLength + boardDrawPosition.y,
+        tileManager.tetriminoRect.width * tilePixelLength,
+        tileManager.tetriminoRect.height * tilePixelLength
+    )
+    love.graphics.setColor(1, 1, 1)
+
     if tileManager:aboutToSettle() then
         love.graphics.setColor(1, 1, 1, 0.5)
     end
@@ -64,6 +68,21 @@ function love.draw()
             'fill',
             tile.x * tilePixelLength + boardDrawPosition.x,
             tile.y * tilePixelLength + boardDrawPosition.y,
+            tilePixelLength,
+            tilePixelLength
+        )
+    end
+
+    local originOffset = {
+        x = tileManager.tetriminoRect.x + tileManager.tetriminoRect.width/2,
+        y = tileManager.tetriminoRect.y + tileManager.tetriminoRect.height/2
+    }
+
+    for _, tile in ipairs(tileManager.activeTiles) do
+        love.graphics.rectangle(
+            'fill',
+            tile.x * tilePixelLength + boardDrawPosition.x - originOffset.x * tilePixelLength,
+            tile.y * tilePixelLength + boardDrawPosition.y - originOffset.y * tilePixelLength,
             tilePixelLength,
             tilePixelLength
         )

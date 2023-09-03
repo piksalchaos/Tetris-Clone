@@ -1,6 +1,7 @@
 local Timer = require 'Timer'
 local Tile = require 'Tile'
 local keybinds = require 'keybinds'
+local tetriminos= require 'tetriminos'
 
 local TileManager = {}
 TileManager.__index = TileManager
@@ -30,6 +31,7 @@ function TileManager.new(width, height)
         height = height or 20
     }
     self.horizontalDirection = 0
+    self.tetriminoRect = {x=0, y=0, width=0, height=0}
     
     return self
 end
@@ -72,6 +74,8 @@ function TileManager:keypressed(key)
         self.timers.descend:start()
     end
     if key == keybinds.hardDrop then self:hardDrop() end
+    if key == keybinds.rotateClockwise then self:rotateTetrimino(true) end
+    if key == keybinds.rotateCounterClockwise then self:rotateTetrimino(false) end
 end
 
 function TileManager:keyreleased(key)
@@ -91,14 +95,67 @@ function TileManager:newTile(x, y, active)
     end
 end
 
+function TileManager:newTetrimino()
+    local function newTetriminoTile(tileValue, x, y)
+        if tileValue == 1 then
+            self:newTile(x, y, true)
+        end
+    end
+    local tetriminoMatrix = tetriminos[math.random(1, #tetriminos)]
+
+    self.tetriminoRect.width = #tetriminoMatrix[1]
+    self.tetriminoRect.height = #tetriminoMatrix
+
+    local xOffset =  self.board.width/2 - math.ceil(#tetriminoMatrix[1]/2)
+
+    self.tetriminoRect.x = xOffset
+    self.tetriminoRect.y = 0
+    
+
+    for row, tileValues in ipairs(tetriminoMatrix) do
+        for column, tileValue in ipairs(tileValues) do
+            newTetriminoTile(tileValue, xOffset + column-1, row-1)
+        end
+    end
+end
+
+function TileManager:rotateTetrimino(clockwise)
+    local originOffset = {
+        x = self.tetriminoRect.x + self.tetriminoRect.width/2 - 0.5,
+        y = self.tetriminoRect.y + self.tetriminoRect.height/2 - 0.5
+    }
+    local rotatedTiles = {}
+    for _, tile in ipairs(self.activeTiles) do
+        local originTile = Tile.new(
+            tile:getX() - originOffset.x,
+            tile:getY() - originOffset.y
+        )
+        table.insert(rotatedTiles, originTile)
+    end
+
+    for _, tile in ipairs(rotatedTiles) do
+        local sign = {
+            x = clockwise and -1 or 1,
+            y = clockwise and 1 or -1
+        }
+        tile:setPosition(
+            sign.x * tile:getY() + originOffset.x,
+            sign.y * tile:getX() + originOffset.y
+        )
+    end
+    self.activeTiles = rotatedTiles
+end
+
 local function moveTiles(tiles, relativeX, relativeY)
-    for i, tile in ipairs(tiles) do
+    for _, tile in ipairs(tiles) do
         tile:setPosition(tile:getX() + relativeX, tile:getY() + relativeY)
     end
 end
 
 function TileManager:moveActiveTiles(relativeX, relativeY)
     moveTiles(self.activeTiles, relativeX, relativeY)
+    self.tetriminoRect.x = self.tetriminoRect.x + relativeX
+    self.tetriminoRect.y = self.tetriminoRect.y + relativeY
 end
 
 function TileManager:checkActiveTilesFromPosition(
@@ -169,6 +226,7 @@ function TileManager:settle()
         table.insert(self.idleTiles, activeTile)
     end
     self.activeTiles = {}
+    self:newTetrimino()
 end
 
 function TileManager:hardDrop()
