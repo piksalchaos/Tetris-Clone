@@ -119,36 +119,42 @@ function TileManager:newTetrimino()
     end
 end
 
-function TileManager:rotateTetrimino(clockwise)
+--[[ function TileManager:checkIfTileOverlapsOthers(tile)
+    for _, idleTile in ipairs(self.idleTiles) do
+        if tile:getX() == idleTile:getX() and tile:getY() == idleTile:getY() then
+            return true
+        end
+    end
+    return false
+end
+
+function TileManager:checkIfMultipleTilesOverlapOthers(checkedTiles)
+    for _, tile in ipairs(checkedTiles) do
+        if self:checkIfTileOverlapsOthers(tile) then return true end
+    end
+    return false
+end
+ ]]
+local function moveTiles(tiles, relativeX, relativeY)
+    for _, tile in ipairs(tiles) do
+        tile:setPosition(tile:getX() + relativeX, tile:getY() + relativeY)
+    end
+end
+
+function TileManager:rotateTetrimino(isClockwise)
     local originOffset = {
         x = self.tetriminoRect.x + self.tetriminoRect.width/2 - 0.5,
         y = self.tetriminoRect.y + self.tetriminoRect.height/2 - 0.5
     }
-    local rotatedTiles = {}
     for _, tile in ipairs(self.activeTiles) do
-        local originTile = Tile.new(
-            tile:getX() - originOffset.x,
-            tile:getY() - originOffset.y
-        )
-        table.insert(rotatedTiles, originTile)
-    end
-
-    for _, tile in ipairs(rotatedTiles) do
         local sign = {
-            x = clockwise and -1 or 1,
-            y = clockwise and 1 or -1
+            x = isClockwise and -1 or 1,
+            y = isClockwise and 1 or -1
         }
         tile:setPosition(
-            sign.x * tile:getY() + originOffset.x,
-            sign.y * tile:getX() + originOffset.y
+            (tile:getY() - originOffset.y)*sign.x + originOffset.x,
+            (tile:getX() - originOffset.x)*sign.y + originOffset.y
         )
-    end
-    self.activeTiles = rotatedTiles
-end
-
-local function moveTiles(tiles, relativeX, relativeY)
-    for _, tile in ipairs(tiles) do
-        tile:setPosition(tile:getX() + relativeX, tile:getY() + relativeY)
     end
 end
 
@@ -177,22 +183,23 @@ end
 function TileManager:checkActiveTilesFromY(relativeY, targetY)
     return self:checkActiveTilesFromPosition(0, relativeY, nil, targetY)
 end
-function TileManager:moveActiveTilesOneHorizontally()
-    local canMove = true
 
+function TileManager:activeTilesOverlapIdleTiles()
     for _, idleTile in ipairs(self.idleTiles) do
         if self:checkActiveTilesFromPosition(
             self.horizontalDirection, 0, idleTile:getX(), idleTile:getY()
-        ) then
-            canMove = false
-        end
+        ) then return true end
     end
+    return false
+end
 
-    if self:checkActiveTilesFromX(self.horizontalDirection, -1)
+function TileManager:activeTilesOverlapBorders()
+    return self:checkActiveTilesFromX(self.horizontalDirection, -1)
     or self:checkActiveTilesFromX(self.horizontalDirection, self.board.width)
-    then canMove = false end
+end
 
-    if canMove then
+function TileManager:moveActiveTilesOneHorizontally()
+    if not self:activeTilesOverlapBorders() then
         self:moveActiveTiles(self.horizontalDirection, 0)
     end
 

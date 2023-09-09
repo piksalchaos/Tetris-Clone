@@ -78,7 +78,7 @@ function love.draw()
         y = tileManager.tetriminoRect.y + tileManager.tetriminoRect.height/2
     }
 
-    for _, tile in ipairs(tileManager.activeTiles) do
+    --[[ for _, tile in ipairs(tileManager.activeTiles) do
         love.graphics.rectangle(
             'fill',
             tile.x * tilePixelLength + boardDrawPosition.x - originOffset.x * tilePixelLength,
@@ -86,5 +86,5 @@ function love.draw()
             tilePixelLength,
             tilePixelLength
         )
-    end
+    end ]]
 end
