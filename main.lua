@@ -50,9 +50,9 @@ function love.draw()
     )
     love.graphics.setColor(1, 1, 1)
 
-    --[[ if tileManager:aboutToSettle() then
+    if tileManager:aboutToSettle() then
         love.graphics.setColor(1, 1, 1, 0.5)
-    end ]]
+    end
     for _, tile in ipairs(tileManager.activeTiles) do
         love.graphics.rectangle(
             'fill',
