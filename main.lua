@@ -50,9 +50,9 @@ function love.draw()
     )
     love.graphics.setColor(1, 1, 1)
 
-    if tileManager:aboutToSettle() then
+    --[[ if tileManager:aboutToSettle() then
         love.graphics.setColor(1, 1, 1, 0.5)
-    end
+    end ]]
     for _, tile in ipairs(tileManager.activeTiles) do
         love.graphics.rectangle(
             'fill',
@@ -87,4 +87,17 @@ function love.draw()
             tilePixelLength
         )
     end ]]
+end
+
+function table.copy(t)
+    local copy = {}
+    for key, value in pairs(t) do
+        if type(value) == "table" then
+            copy[key] = table.copy(value)
+        else
+            copy[key] = value
+        end
+    end
+    setmetatable(copy, getmetatable(t))
+    return copy
 end

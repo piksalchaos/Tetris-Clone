@@ -30,7 +30,6 @@ function TileManager.new(width, height)
         width = width or 10,
         height = height or 20
     }
-    self.horizontalDirection = 0
     self.tetriminoRect = {x=0, y=0, width=0, height=0}
     
     return self
@@ -42,10 +41,10 @@ function TileManager:update(dt)
     end
 
     if self.timers.descend:isFinished() then
-        self:moveActiveTilesOneDown()
+        
     end
     if self.timers.move:isFinished() then
-        self:moveActiveTilesOneHorizontally()
+        
     end
     if self.timers.settle:isFinished() then
         
@@ -62,11 +61,10 @@ function TileManager:update(dt)
 end
 
 function TileManager:keypressed(key)
-    if key == keybinds.moveLeft or key == keybinds.moveRight then
-        if key == keybinds.moveLeft then self.horizontalDirection = -1
-        else self.horizontalDirection = 1 end
-        self:moveActiveTilesOneHorizontally()
-        self.timers.move:start()
+    if key == keybinds.moveLeft then
+        self:shiftActiveTiles(-1)
+    elseif key == keybinds.moveRight then
+        self:shiftActiveTiles(1)
     end
     if key == keybinds.softDrop then
         self:moveActiveTilesOneDown()
@@ -74,8 +72,8 @@ function TileManager:keypressed(key)
         self.timers.descend:start()
     end
     if key == keybinds.hardDrop then self:hardDrop() end
-    if key == keybinds.rotateClockwise then self:rotateTetrimino(true) end
-    if key == keybinds.rotateCounterClockwise then self:rotateTetrimino(false) end
+    if key == keybinds.rotateClockwise then self:rotateActiveTiles(true) end
+    if key == keybinds.rotateCounterClockwise then self:rotateActiveTiles(false) end
 end
 
 function TileManager:keyreleased(key)
@@ -119,34 +117,42 @@ function TileManager:newTetrimino()
     end
 end
 
---[[ function TileManager:checkIfTileOverlapsOthers(tile)
-    for _, idleTile in ipairs(self.idleTiles) do
-        if tile:getX() == idleTile:getX() and tile:getY() == idleTile:getY() then
-            return true
-        end
-    end
-    return false
-end
-
-function TileManager:checkIfMultipleTilesOverlapOthers(checkedTiles)
-    for _, tile in ipairs(checkedTiles) do
-        if self:checkIfTileOverlapsOthers(tile) then return true end
-    end
-    return false
-end
- ]]
 local function moveTiles(tiles, relativeX, relativeY)
     for _, tile in ipairs(tiles) do
         tile:setPosition(tile:getX() + relativeX, tile:getY() + relativeY)
     end
 end
 
-function TileManager:rotateTetrimino(isClockwise)
+local function tilesOverlapVerticalBorders(tiles, boardWidth)
+    for _, tile in ipairs(tiles) do
+        if tile.x < 0 or tile.x > boardWidth-1 then
+            return true
+        end
+    end
+    return false
+end
+
+function TileManager:copyActiveTiles()
+    return table.copy(self.activeTiles)
+end
+
+function TileManager:shiftActiveTiles(relativeXPosition)
+    local shiftedTiles = self:copyActiveTiles()
+    moveTiles(shiftedTiles, relativeXPosition, 0)
+
+    if not tilesOverlapVerticalBorders(shiftedTiles, self.board.width) then
+        self.activeTiles = shiftedTiles
+        self.tetriminoRect.x = self.tetriminoRect.x + relativeXPosition
+    end
+end
+
+function TileManager:rotateActiveTiles(isClockwise)
     local originOffset = {
         x = self.tetriminoRect.x + self.tetriminoRect.width/2 - 0.5,
         y = self.tetriminoRect.y + self.tetriminoRect.height/2 - 0.5
     }
-    for _, tile in ipairs(self.activeTiles) do
+    local rotatingTiles = self:copyActiveTiles()
+    for _, tile in ipairs(rotatingTiles) do
         local sign = {
             x = isClockwise and -1 or 1,
             y = isClockwise and 1 or -1
@@ -156,89 +162,9 @@ function TileManager:rotateTetrimino(isClockwise)
             (tile:getX() - originOffset.x)*sign.y + originOffset.y
         )
     end
-end
-
-function TileManager:moveActiveTiles(relativeX, relativeY)
-    moveTiles(self.activeTiles, relativeX, relativeY)
-    self.tetriminoRect.x = self.tetriminoRect.x + relativeX
-    self.tetriminoRect.y = self.tetriminoRect.y + relativeY
-end
-
-function TileManager:checkActiveTilesFromPosition(
-    relativeX, relativeY, targetX, targetY
-)
-    for _, tile in ipairs(self.activeTiles) do
-        if tile:getX() + relativeX == (targetX or tile:getX())
-        and tile:getY() + relativeY == (targetY or tile:getY()) then
-            return true
-        end
+    if not tilesOverlapVerticalBorders(rotatingTiles, self.board.width) then
+        self.activeTiles = rotatingTiles
     end
-    return false
-end
- 
-function TileManager:checkActiveTilesFromX(relativeX, targetX)
-    return self:checkActiveTilesFromPosition(relativeX, 0, targetX, nil)
-end
-
-function TileManager:checkActiveTilesFromY(relativeY, targetY)
-    return self:checkActiveTilesFromPosition(0, relativeY, nil, targetY)
-end
-
-function TileManager:activeTilesOverlapIdleTiles()
-    for _, idleTile in ipairs(self.idleTiles) do
-        if self:checkActiveTilesFromPosition(
-            self.horizontalDirection, 0, idleTile:getX(), idleTile:getY()
-        ) then return true end
-    end
-    return false
-end
-
-function TileManager:activeTilesOverlapBorders()
-    return self:checkActiveTilesFromX(self.horizontalDirection, -1)
-    or self:checkActiveTilesFromX(self.horizontalDirection, self.board.width)
-end
-
-function TileManager:moveActiveTilesOneHorizontally()
-    if not self:activeTilesOverlapBorders() then
-        self:moveActiveTiles(self.horizontalDirection, 0)
-    end
-
-    if self.timers.settle:isRunning() then
-        if not self:aboutToSettle() then self.timers.settle:stop() end
-    end
-end
-
-function TileManager:moveActiveTilesOneDown()
-    if self:aboutToSettle() then
-        self.timers.settle:start()
-    else
-        self:moveActiveTiles(0, 1)
-    end
-end
-
-function TileManager:aboutToSettle()
-    if self:checkActiveTilesFromY(1, self.board.height) then
-        return true
-    end
-    for _, tile in ipairs(self.idleTiles) do
-        if self:checkActiveTilesFromPosition(0, 1, tile:getX(), tile:getY()) then
-            return true
-        end
-    end
-    return false
-end
-
-function TileManager:settle()
-    for _, activeTile in ipairs(self.activeTiles) do
-        table.insert(self.idleTiles, activeTile)
-    end
-    self.activeTiles = {}
-    self:newTetrimino()
-end
-
-function TileManager:hardDrop()
-    while not self:aboutToSettle() do self:moveActiveTiles(0, 1) end
-    self:settle()
 end
 
 return TileManager
