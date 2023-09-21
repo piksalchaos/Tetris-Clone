@@ -43,10 +43,10 @@ function love.draw()
     love.graphics.setColor(1, 1, 1, 0.25)
     love.graphics.rectangle(
         'fill',
-        tileManager.tetriminoRect.x * tilePixelLength + boardDrawPosition.x,
-        tileManager.tetriminoRect.y * tilePixelLength + boardDrawPosition.y,
-        tileManager.tetriminoRect.width * tilePixelLength,
-        tileManager.tetriminoRect.height * tilePixelLength
+        tileManager.tetriminoData.rect.x * tilePixelLength + boardDrawPosition.x,
+        tileManager.tetriminoData.rect.y * tilePixelLength + boardDrawPosition.y,
+        tileManager.tetriminoData.rect.width * tilePixelLength,
+        tileManager.tetriminoData.rect.height * tilePixelLength
     )
     love.graphics.setColor(1, 1, 1)
 
@@ -74,8 +74,8 @@ function love.draw()
     end
 
     local originOffset = {
-        x = tileManager.tetriminoRect.x + tileManager.tetriminoRect.width/2,
-        y = tileManager.tetriminoRect.y + tileManager.tetriminoRect.height/2
+        x = tileManager.tetriminoData.rect.x + tileManager.tetriminoData.rect.width/2,
+        y = tileManager.tetriminoData.rect.y + tileManager.tetriminoData.rect.height/2
     }
 
     --[[ for _, tile in ipairs(tileManager.activeTiles) do
