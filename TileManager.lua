@@ -232,6 +232,8 @@ function TileManager:settle()
     end
     self.activeTiles = {}
     self:newTetrimino()
+
+    self.timers.settle:stop()
 end
 
 function TileManager:hardDrop()
