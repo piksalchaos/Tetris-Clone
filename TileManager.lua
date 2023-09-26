@@ -195,10 +195,22 @@ function TileManager:rotateActiveTiles(isClockwise)
         )
     end
     local newRotationState = (self.tetriminoData.rotationState + (isClockwise and 1 or -1)) % 4
+
+    local kickTest = self.tetriminoData.kickTests[self.tetriminoData.rotationState+1]
+    if not isClockwise then
+        kickTest = table.copy(kickTest, function(value) return -value end)
+    end
+
+    --print('--------')
+    for _, coords in ipairs(kickTest) do
+        --print(coords[1] .. '  ' .. coords[2])
+        
+    end
+
     if not self:areTilesInImpossiblePosition(rotatingTiles) then
         self.activeTiles = rotatingTiles
         self.tetriminoData.rotationState = newRotationState
-        print(self.tetriminoData.rotationState)
+        --print(self.tetriminoData.rotationState)
     end
 end
 

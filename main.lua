@@ -89,13 +89,14 @@ function love.draw()
     end ]]
 end
 
-function table.copy(t)
+function table.copy(t, modifierFunction)
+    modifierFunction = modifierFunction or function(value) return value end
     local copy = {}
     for key, value in pairs(t) do
         if type(value) == "table" then
             copy[key] = table.copy(value)
         else
-            copy[key] = value
+            copy[key] = modifierFunction(value)
         end
     end
     setmetatable(copy, getmetatable(t))
