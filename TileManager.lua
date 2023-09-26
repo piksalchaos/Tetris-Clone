@@ -126,7 +126,8 @@ end
 
 local function moveTiles(tiles, relativeX, relativeY)
     for _, tile in ipairs(tiles) do
-        tile:setPosition(tile:getX() + relativeX, tile:getY() + relativeY)
+        tile.x = tile.x + relativeX
+        tile.y = tile.y + relativeY
     end
 end
 
@@ -134,6 +135,17 @@ function TileManager:moveActiveTiles(relativeX, relativeY)
     moveTiles(self.activeTiles, relativeX, relativeY)
     self.tetriminoData.rect.x = self.tetriminoData.rect.x + relativeX
     self.tetriminoData.rect.y = self.tetriminoData.rect.y + relativeY
+end
+
+function TileManager:setActiveTiles(newTiles)
+    self.activeTiles = newTiles
+    local lowestX, lowestY = self.board.width, self.board.height
+    for _, tile in ipairs(self.activeTiles) do
+        lowestX = math.min(lowestX, tile.x)
+        lowestY = math.min(lowestY, tile.y)
+    end
+    self.tetriminoData.rect.x = lowestX
+    self.tetriminoData.rect.y = lowestY
 end
 
 function TileManager:checkActiveTiles(func)
@@ -166,8 +178,8 @@ function TileManager:isTileOnIdleTiles(tile, offsetX, offsetY)
     return false
 end
 
-function TileManager:areTilesInImpossiblePosition(tiles)
-    for _, tile in ipairs(tiles) do
+function TileManager:areActiveTilesInImpossiblePosition()
+    for _, tile in ipairs(self.activeTiles) do
         if tile.x < 0 or tile.x > self.board.width-1 then
             return true
         end
@@ -183,12 +195,13 @@ function TileManager:rotateActiveTiles(isClockwise)
         x = self.tetriminoData.rect.x + self.tetriminoData.rect.width/2 - 0.5,
         y = self.tetriminoData.rect.y + self.tetriminoData.rect.height/2 - 0.5
     }
-    local rotatingTiles = table.copy(self.activeTiles)
+    local originalTiles = table.copy(self.activeTiles)
     local sign = {
         x = isClockwise and -1 or 1,
         y = isClockwise and 1 or -1
     }
-    for _, tile in ipairs(rotatingTiles) do
+
+    for _, tile in ipairs(self.activeTiles) do
         tile:setPosition(
             (tile:getY() - originOffset.y)*sign.x + originOffset.x,
             (tile:getX() - originOffset.x)*sign.y + originOffset.y
@@ -207,10 +220,11 @@ function TileManager:rotateActiveTiles(isClockwise)
         
     end
 
-    if not self:areTilesInImpossiblePosition(rotatingTiles) then
-        self.activeTiles = rotatingTiles
+    if not self:areActiveTilesInImpossiblePosition() then
         self.tetriminoData.rotationState = newRotationState
-        --print(self.tetriminoData.rotationState)
+        print(self.tetriminoData.rotationState)
+    else
+        self.activeTiles = originalTiles
     end
 end
 
