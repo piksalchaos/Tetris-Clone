@@ -61,6 +61,10 @@ function TileManager:update(dt)
     else
         self.timers.move:stop()
     end
+
+    if not self:aboutToSettle() then
+        self.timers.settle:stop()
+    end
 end
 
 function TileManager:keypressed(key)
@@ -158,10 +162,10 @@ end
 function TileManager:shiftActiveTilesHorizontally(xOffset)
     if not self:checkActiveTiles(
         xOffset < 0 and function(tile)
-            return tile.x <= 0 or self:isTileOnIdleTiles(tile, 1, 0)
+            return tile.x <= 0 or self:isTileOnIdleTiles(tile, -1, 0)
         end
         or function(tile)
-            return tile.x >= self.board.width-1 or self:isTileOnIdleTiles(tile, -1, 0)
+            return tile.x >= self.board.width-1 or self:isTileOnIdleTiles(tile, 1, 0)
         end)
     then
         self:moveActiveTiles(xOffset, 0)
@@ -171,23 +175,27 @@ end
 function TileManager:isTileOnIdleTiles(tile, offsetX, offsetY)
     offsetX, offsetY = offsetX or 0, offsetY or 0
     for _, idleTile in ipairs(self.idleTiles) do
-        if tile.x == idleTile.x+offsetX and tile.y == idleTile.y+offsetY then
+        if tile.x+offsetX == idleTile.x and tile.y+offsetY == idleTile.y then
             return true
         end
     end
     return false
 end
 
-function TileManager:areActiveTilesInImpossiblePosition()
-    for _, tile in ipairs(self.activeTiles) do
-        if tile.x < 0 or tile.x > self.board.width-1 then
+function TileManager:areActiveTilesInImpossiblePosition(offsetX, offsetY)
+    offsetX, offsetY = offsetX or 0, offsetY or 0
+    return self:checkActiveTiles(function(tile)
+        if tile.x + offsetX < 0 or tile.x + offsetX >= self.board.width then
             return true
         end
-        if self:isTileOnIdleTiles(tile) then
+        if tile.y + offsetY >= self.board.height then
             return true
         end
-    end
-    return false
+        if self:isTileOnIdleTiles(tile, offsetX, offsetY) then
+            return true
+        end
+        return false
+    end)
 end
 
 function TileManager:rotateActiveTiles(isClockwise)
@@ -208,22 +216,27 @@ function TileManager:rotateActiveTiles(isClockwise)
         )
     end
     local newRotationState = (self.tetriminoData.rotationState + (isClockwise and 1 or -1)) % 4
-
     local kickTest = self.tetriminoData.kickTests[self.tetriminoData.rotationState+1]
     if not isClockwise then
         kickTest = table.copy(kickTest, function(value) return -value end)
     end
 
+    local failedRotation = true
     --print('--------')
     for _, coords in ipairs(kickTest) do
         --print(coords[1] .. '  ' .. coords[2])
-        
+        if not self:areActiveTilesInImpossiblePosition(coords[1], -coords[2]) then
+            self:moveActiveTiles(coords[1], -coords[2])
+            self.tetriminoData.rotationState = newRotationState
+
+            --print(self.tetriminoData.rotationState)
+            self.timers.settle:stop()
+            failedRotation = false
+            break
+        end
     end
 
-    if not self:areActiveTilesInImpossiblePosition() then
-        self.tetriminoData.rotationState = newRotationState
-        print(self.tetriminoData.rotationState)
-    else
+    if failedRotation then
         self.activeTiles = originalTiles
     end
 end
@@ -244,7 +257,7 @@ function TileManager:aboutToSettle()
     end
 
     if self:checkActiveTiles(function(tile)
-        return self:isTileOnIdleTiles(tile, 0, -1)
+        return self:isTileOnIdleTiles(tile, 0, 1)
     end) then
         return true
     end
