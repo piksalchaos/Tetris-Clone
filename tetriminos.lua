@@ -39,7 +39,11 @@ Tetrimino.tileMaps = {
     }
 }
 
-Tetrimino.kickTests = {
+-- 0 is starting position
+-- 1 is 90 clockwise
+-- 2 is full 180
+-- 3 is 270 clockwise
+Tetrimino.kickTests = { -- all clockwise by default
     basic = {
         { -- 0>>1
             {0, 0},

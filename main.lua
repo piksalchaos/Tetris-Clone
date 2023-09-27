@@ -40,7 +40,7 @@ function love.draw()
         boardTileHeight * tilePixelLength
     )
 
-    love.graphics.setColor(1, 1, 1, 0.25)
+    love.graphics.setColor(0.5, 0.5, 1, 0.25)
     love.graphics.rectangle(
         'fill',
         tileManager.tetriminoData.rect.x * tilePixelLength + boardDrawPosition.x,
