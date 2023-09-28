@@ -14,8 +14,9 @@ function TileManager.new(width, height)
     self.idleTiles = {}
     self.timers = {
         descend = Timer.new(0.85, true, true),
-        softDrop = Timer.new(0.12, false, true),
-        move = Timer.new(0.15, false, true),
+        softDrop = Timer.new(0.075, false, true),
+        quickShiftDelay = Timer.new(0.1, false, false),
+        quickShift = Timer.new(0.05, false, true),
         settle = Timer.new(0.3, false, false)
     }
     
@@ -52,21 +53,23 @@ function TileManager:update(dt)
         self.horizontalDirection = -1
     elseif love.keyboard.isDown(keybinds.moveRight) then
         self.horizontalDirection = 1
-    else
-        self.timers.move:stop()
     end
-    if self.timers.move:isFinished() then
+
+    if self.timers.quickShiftDelay:isFinished() then
+        self.timers.quickShift:start()
+    end
+    if self.timers.quickShift:isFinished() then
         self:shiftActiveTilesHorizontally(self.horizontalDirection)
-    end    
+    end
 end
 
 function TileManager:keypressed(key)
     if key == keybinds.moveLeft then
         self:shiftActiveTilesHorizontally(-1)
-        self.timers.move:start()
+        self.timers.quickShiftDelay:start()
     elseif key == keybinds.moveRight then
         self:shiftActiveTilesHorizontally(1)
-        self.timers.move:start()
+        self.timers.quickShiftDelay:start()
     end
 
     if key == keybinds.softDrop then
@@ -83,6 +86,13 @@ function TileManager:keyreleased(key)
     if key == keybinds.softDrop then
         self.timers.descend:start()
         self.timers.softDrop:stop()
+    end
+    if key == keybinds.moveLeft or key == keybinds.moveRight then
+        if self.timers.quickShift:isRunning() then
+            self.timers.quickShift:stop()
+        else
+            self.timers.quickShiftDelay:stop()
+        end
     end
 end
 
