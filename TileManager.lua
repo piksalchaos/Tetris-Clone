@@ -142,12 +142,6 @@ function TileManager:checkActiveTiles(func)
     return false
 end
 
-function TileManager:shiftActiveTilesHorizontally(xOffset)
-    if not self:areActiveTilesInImpossiblePosition(xOffset, 0) then
-        self:moveActiveTiles(xOffset, 0)
-    end
-end
-
 function TileManager:isTileOnIdleTiles(tile, offsetX, offsetY)
     offsetX, offsetY = offsetX or 0, offsetY or 0
     for _, idleTile in ipairs(self.idleTiles) do
@@ -162,7 +156,8 @@ end
 function TileManager:areActiveTilesInImpossiblePosition(offsetX, offsetY)
     offsetX, offsetY = offsetX or 0, offsetY or 0
     return self:checkActiveTiles(function(tile)
-        if tile:getX() + offsetX < 0 or tile:getX() + offsetX >= self.board.width then
+        if tile:getX() + offsetX < 0
+        or tile:getX() + offsetX >= self.board.width then
             return true
         end
         if tile:getY() + offsetY >= self.board.height then
@@ -171,6 +166,14 @@ function TileManager:areActiveTilesInImpossiblePosition(offsetX, offsetY)
         if self:isTileOnIdleTiles(tile, offsetX, offsetY) then
             return true
         end
+        return false
+    end)
+end
+
+function TileManager:aboutToSettle()
+    return self:checkActiveTiles(function(tile)
+        if tile.y >= self.board.height-1 then return true end
+        if self:isTileOnIdleTiles(tile, 0, 1) then return true end
         return false
     end)
 end
@@ -217,28 +220,18 @@ function TileManager:rotateActiveTiles(isClockwise)
     end
 end
 
+function TileManager:shiftActiveTilesHorizontally(xOffset)
+    if not self:areActiveTilesInImpossiblePosition(xOffset, 0) then
+        self:moveActiveTiles(xOffset, 0)
+    end
+end
+
 function TileManager:descendActiveTiles()
     if self:aboutToSettle() then
         self.timers.settle:start()
     else
         self:moveActiveTiles(0, 1)
     end
-end
-
-function TileManager:aboutToSettle()
-    if self:checkActiveTiles(function(tile)
-        return tile.y >= self.board.height-1
-    end) then
-        return true
-    end
-
-    if self:checkActiveTiles(function(tile)
-        return self:isTileOnIdleTiles(tile, 0, 1)
-    end) then
-        return true
-    end
-
-    return false
 end
 
 function TileManager:settle()
