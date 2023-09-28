@@ -12,18 +12,11 @@ function TileManager.new(width, height)
     self.tiles = {}
     self.activeTiles = {}
     self.idleTiles = {}
-    self.timerDurations = {
-        descend = {
-            default = 0.85,
-            softDrop = 0.12
-        },
-        move = 0.15,
-        settle = 0.3
-    }
     self.timers = {
-        descend = Timer.new(self.timerDurations.descend.default, true, true),
-        move = Timer.new(self.timerDurations.move, false, true),
-        settle = Timer.new(self.timerDurations.settle, false, false)
+        descend = Timer.new(0.85, true, true),
+        softDrop = Timer.new(0.12, false, true),
+        move = Timer.new(0.15, false, true),
+        settle = Timer.new(0.3, false, false)
     }
     
     self.board = {
@@ -44,11 +37,12 @@ function TileManager:update(dt)
         timer:update(dt)
     end
 
-    if self.timers.descend:isFinished() then
+    if self.timers.descend:isFinished() or self.timers.softDrop:isFinished() then
         self:descendActiveTiles()
     end
-    if self.timers.move:isFinished() then
-        self:shiftActiveTilesHorizontally(self.horizontalDirection)
+
+    if not self:aboutToSettle() then
+        self.timers.settle:stop()
     end
     if self.timers.settle:isFinished() then
         self:settle()
@@ -61,10 +55,9 @@ function TileManager:update(dt)
     else
         self.timers.move:stop()
     end
-
-    if not self:aboutToSettle() then
-        self.timers.settle:stop()
-    end
+    if self.timers.move:isFinished() then
+        self:shiftActiveTilesHorizontally(self.horizontalDirection)
+    end    
 end
 
 function TileManager:keypressed(key)
@@ -78,7 +71,8 @@ function TileManager:keypressed(key)
 
     if key == keybinds.softDrop then
         self:descendActiveTiles()
-        self.timers.descend:setDuration(self.timerDurations.descend.softDrop)
+        self.timers.descend:stop()
+        self.timers.softDrop:start()
     end
     if key == keybinds.hardDrop then self:hardDrop() end
     if key == keybinds.rotateClockwise then self:rotateActiveTiles(true) end
@@ -87,7 +81,8 @@ end
 
 function TileManager:keyreleased(key)
     if key == keybinds.softDrop then
-        self.timers.descend:setDuration(self.timerDurations.descend.default)
+        self.timers.descend:start()
+        self.timers.softDrop:stop()
     end
 end
 
@@ -102,11 +97,6 @@ function TileManager:newTile(x, y, active)
 end
 
 function TileManager:newTetrimino()
-    local function newTetriminoTile(tileValue, x, y)
-        if tileValue == 1 then
-            self:newTile(x, y, true)
-        end
-    end
     local tetrimino = tetriminos[math.random(1, #tetriminos)]
     local tetriminoTileMap = tetrimino:getTileMap()
 
@@ -121,6 +111,11 @@ function TileManager:newTetrimino()
     self.tetriminoData.rotationState = 0
     self.tetriminoData.kickTests = tetrimino:getKickTests()
 
+    local function newTetriminoTile(tileValue, x, y)
+        if tileValue == 1 then
+            self:newTile(x, y, true)
+        end
+    end
     for row, tileValues in ipairs(tetriminoTileMap) do
         for column, tileValue in ipairs(tileValues) do
             newTetriminoTile(tileValue, xOffset + column-1, row-1)
@@ -180,46 +175,45 @@ function TileManager:areActiveTilesInImpossiblePosition(offsetX, offsetY)
     end)
 end
 
+function TileManager:testKickActiveTiles(kickTest, isClockwise)
+    for _, coords in ipairs(kickTest) do
+        local xKick, yKick = coords[1], -coords[2]
+        if not isClockwise then xKick, yKick = -xKick, -yKick end
+
+        if not self:areActiveTilesInImpossiblePosition(xKick, yKick) then
+            return true, xKick, yKick
+        end
+    end
+    return false
+end
+
 function TileManager:rotateActiveTiles(isClockwise)
+    local originalTiles = table.copy(self.activeTiles)
+    local originalRect = table.copy(self.tetriminoData.rect)
+
     local originOffset = {
         x = self.tetriminoData.rect.x + self.tetriminoData.rect.width/2 - 0.5,
         y = self.tetriminoData.rect.y + self.tetriminoData.rect.height/2 - 0.5
     }
-    local originalTiles = table.copy(self.activeTiles)
-    local sign = {
-        x = isClockwise and -1 or 1,
-        y = isClockwise and 1 or -1
-    }
-
+    local sign = {x = isClockwise and -1 or 1, y = isClockwise and 1 or -1}
     for _, tile in ipairs(self.activeTiles) do
         tile:setPosition(
             (tile:getY() - originOffset.y)*sign.x + originOffset.x,
             (tile:getX() - originOffset.x)*sign.y + originOffset.y
         )
     end
+    
     local newRotationState = (self.tetriminoData.rotationState + (isClockwise and 1 or -1)) % 4
     local kickTest = self.tetriminoData.kickTests[self.tetriminoData.rotationState+1]
 
-    local failedRotation = true
-    --print('--------')
-    for _, coords in ipairs(kickTest) do
-        --print(coords[1] .. '  ' .. coords[2])
-        local xKick, yKick = coords[1], -coords[2]
-        if not isClockwise then xKick, yKick = -xKick, -yKick end
-
-        if not self:areActiveTilesInImpossiblePosition(xKick, yKick) then
-            self:moveActiveTiles(xKick, yKick)
-            self.tetriminoData.rotationState = newRotationState
-
-            --print(self.tetriminoData.rotationState)
-            self.timers.settle:stop()
-            failedRotation = false
-            break
-        end
-    end
-
-    if failedRotation then
+    local successfulRotation, xKick, yKick = self:testKickActiveTiles(kickTest, isClockwise)
+    if successfulRotation then
+        self:moveActiveTiles(xKick, yKick)
+        self.tetriminoData.rotationState = newRotationState
+        self.timers.settle:stop()
+    else
         self.activeTiles = originalTiles
+        self.tetriminoData.rect = originalRect
     end
 end
 
