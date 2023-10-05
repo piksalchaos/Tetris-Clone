@@ -1,4 +1,5 @@
 local Timer = require 'Timer'
+local Counter = require 'Counter'
 local Tile = require 'Tile'
 local keybinds = require 'keybinds'
 local tetriminos = require 'tetriminos'
@@ -17,8 +18,7 @@ function TileManager.new(width, height)
         softDrop = Timer.new(0.075, false, true),
         quickShiftDelay = Timer.new(0.1, false, false),
         quickShift = Timer.new(0.05, false, true),
-        settle = Timer.new(1.5, false, false),
-        idleSettle = Timer.new(0.5, false, false)
+        settle = Timer.new(0.5, false, false)
     }
     
     self.board = {
@@ -30,11 +30,20 @@ function TileManager.new(width, height)
     self.tetriminoData.rotationState = 0
     self.tetriminoData.kickTests = {}
     self.horizontalDirection = 0
+
+    self.aboutToSettleLastDescension = false
+
+    local resetCounterMax = 15
+    self.resetCounters = {
+        shift = Counter.new(resetCounterMax),
+        rotation = Counter.new(resetCounterMax)
+    }
     
     return self
 end
 
 function TileManager:update(dt)
+    print(self.resetCounters.shift:getCount() .. '  ' .. self.resetCounters.rotation:getCount())
     for _, timer in pairs(self.timers) do
         timer:update(dt)
     end
@@ -45,10 +54,11 @@ function TileManager:update(dt)
 
     if not self:aboutToSettle() then
         self.timers.settle:stop()
-        self.timers.idleSettle:stop()
     end
     
-    if self.timers.settle:isFinished() or self.timers.idleSettle:isFinished() then
+    if self.timers.settle:isFinished()
+    or ((self.resetCounters.shift:isFinished() or self.resetCounters.rotation:isFinished())
+    and self:aboutToSettle()) then
         self:settleActiveTiles()
     end
 
@@ -117,9 +127,9 @@ function TileManager:newTetrimino()
     self.tetriminoData.rect.height = #tetriminoTileMap
 
     local xOffset =  self.board.width/2 - math.ceil(#tetriminoTileMap[1]/2)
+    local yOffset = -2
 
-    self.tetriminoData.rect.x = xOffset
-    self.tetriminoData.rect.y = 0
+    self.tetriminoData.rect.x, self.tetriminoData.rect.y = xOffset, yOffset
 
     self.tetriminoData.rotationState = 0
     self.tetriminoData.kickTests = tetrimino:getKickTests()
@@ -131,9 +141,11 @@ function TileManager:newTetrimino()
     end
     for row, tileValues in ipairs(tetriminoTileMap) do
         for column, tileValue in ipairs(tileValues) do
-            newTetriminoTile(tileValue, xOffset + column-1, row-1)
+            newTetriminoTile(tileValue, xOffset + column-1, yOffset + row-1)
         end
     end
+
+    self.aboutToSettleLastDescension = false
 end
 
 function TileManager:moveActiveTiles(relativeX, relativeY)
@@ -222,7 +234,10 @@ function TileManager:rotateActiveTiles(isClockwise)
     if successfulRotation then
         self:moveActiveTiles(xKick, yKick)
         self.tetriminoData.rotationState = newRotationState
-        self.timers.idleSettle:start()
+        if self.aboutToSettleLastDescension then
+            self.timers.settle:start()
+            self.resetCounters.rotation:increment()
+        end
     else
         self.activeTiles = originalTiles
         self.tetriminoData.rect = originalRect
@@ -233,7 +248,12 @@ function TileManager:shiftActiveTilesHorizontally(xOffset)
     if not self:areActiveTilesInImpossiblePosition(xOffset, 0) then
         self:moveActiveTiles(xOffset, 0)
         if self:aboutToSettle() then
-            self.timers.idleSettle:start()
+            self.timers.settle:start()
+            self.resetCounters.shift:increment()
+            self.resetCounters.rotation:increment()
+        else
+            self.resetCounters.rotation:increment(-self.resetCounters.shift:getCount())
+            self.resetCounters.shift:reset()
         end
     end
 end
@@ -241,11 +261,11 @@ end
 function TileManager:descendActiveTiles()
     if not self:aboutToSettle() then self:moveActiveTiles(0, 1) end
     if self:aboutToSettle() then
-        if not self.timers.idleSettle:isRunning() then
+        if not self.timers.settle:isRunning() then
             self.timers.settle:start()
-            self.timers.idleSettle:start()
         end
     end
+    self.aboutToSettleLastDescension = self:aboutToSettle()
 end
 
 function TileManager:settleActiveTiles()
@@ -256,7 +276,8 @@ function TileManager:settleActiveTiles()
     self:newTetrimino()
 
     self.timers.settle:stop()
-    self.timers.idleSettle:stop()
+    self.resetCounters.shift:reset()
+    self.resetCounters.rotation:reset()
 
     self:removeTilesInFullRows()
 end

@@ -1,4 +1,4 @@
-Timer = {}
+local Timer = {}
 Timer.__index = Timer
 
 function Timer.new(duration, isRunning, isLoop)
