@@ -49,7 +49,7 @@ function TileManager:update(dt)
     end
     
     if self.timers.settle:isFinished() or self.timers.idleSettle:isFinished() then
-        self:settle()
+        self:settleActiveTiles()
     end
 
     if love.keyboard.isDown(keybinds.moveLeft) then
@@ -80,7 +80,7 @@ function TileManager:keypressed(key)
         self.timers.descend:stop()
         self.timers.softDrop:start()
     end
-    if key == keybinds.hardDrop then self:hardDrop() end
+    if key == keybinds.hardDrop then self:hardDropActiveTiles() end
     if key == keybinds.rotateClockwise then self:rotateActiveTiles(true) end
     if key == keybinds.rotateCounterClockwise then self:rotateActiveTiles(false) end
 end
@@ -136,14 +136,10 @@ function TileManager:newTetrimino()
     end
 end
 
-local function moveTiles(tiles, relativeX, relativeY)
-    for _, tile in ipairs(tiles) do
+function TileManager:moveActiveTiles(relativeX, relativeY)
+    for _, tile in ipairs(self.activeTiles) do
         tile:setPosition(tile:getX() + relativeX, tile:getY() + relativeY)
     end
-end
-
-function TileManager:moveActiveTiles(relativeX, relativeY)
-    moveTiles(self.activeTiles, relativeX, relativeY)
     self.tetriminoData.rect.x = self.tetriminoData.rect.x + relativeX
     self.tetriminoData.rect.y = self.tetriminoData.rect.y + relativeY
 end
@@ -191,7 +187,8 @@ function TileManager:aboutToSettle()
     end)
 end
 
-function TileManager:testKickActiveTiles(kickTest, isClockwise)
+function TileManager:testKickActiveTiles(isClockwise)
+    local kickTest = self.tetriminoData.kickTests[self.tetriminoData.rotationState+1]
     for _, coords in ipairs(kickTest) do
         local xKick, yKick = coords[1], -coords[2]
         if not isClockwise then xKick, yKick = -xKick, -yKick end
@@ -218,11 +215,10 @@ function TileManager:rotateActiveTiles(isClockwise)
             (tile:getX() - originOffset.x)*sign.y + originOffset.y
         )
     end
-    
-    local newRotationState = (self.tetriminoData.rotationState + (isClockwise and 1 or -1)) % 4
-    local kickTest = self.tetriminoData.kickTests[self.tetriminoData.rotationState+1]
 
-    local successfulRotation, xKick, yKick = self:testKickActiveTiles(kickTest, isClockwise)
+    local successfulRotation, xKick, yKick = self:testKickActiveTiles(isClockwise)
+
+    local newRotationState = (self.tetriminoData.rotationState + (isClockwise and 1 or -1)) % 4
     if successfulRotation then
         self:moveActiveTiles(xKick, yKick)
         self.tetriminoData.rotationState = newRotationState
@@ -252,7 +248,7 @@ function TileManager:descendActiveTiles()
     end
 end
 
-function TileManager:settle()
+function TileManager:settleActiveTiles()
     for _, activeTile in ipairs(self.activeTiles) do
         table.insert(self.idleTiles, activeTile)
     end
@@ -261,11 +257,62 @@ function TileManager:settle()
 
     self.timers.settle:stop()
     self.timers.idleSettle:stop()
+
+    self:removeTilesInFullRows()
 end
 
-function TileManager:hardDrop()
+function TileManager:hardDropActiveTiles()
     while not self:aboutToSettle() do self:moveActiveTiles(0, 1) end
-    self:settle()
+    self:settleActiveTiles()
+end
+
+function TileManager:getFullRows()
+    local rowCounts = {}
+    for i=1, self.board.height do
+        table.insert(rowCounts, 0)
+    end
+    for _, tile in ipairs(self.idleTiles) do
+        rowCounts[tile:getY()+1] = rowCounts[tile:getY()+1] + 1
+    end
+    local fullRows = {}
+    for row, rowCount in ipairs(rowCounts) do
+        if rowCount >= 10 then
+            table.insert(fullRows, row)
+        end
+    end
+    return fullRows
+end
+
+function TileManager:removeTilesInRow(row)
+    local index = 1
+    while index <= #self.idleTiles do
+        if self.idleTiles[index]:getY() == row-1 then
+            table.remove(self.idleTiles, index)
+        else
+            index = index + 1
+        end
+    end
+end
+
+function TileManager:removeTilesInFullRows()
+    local fullRows = self:getFullRows()
+
+    local highestRow = self.board.height
+    local lowestRow = 0
+    for _, row in ipairs(fullRows) do
+        self:removeTilesInRow(row)
+        highestRow = row < highestRow and row or highestRow
+        lowestRow = row > lowestRow and row or lowestRow
+    end
+
+    for _, tile in ipairs(self.idleTiles) do
+        if tile:getY() < lowestRow then
+            tile:setPosition(
+                tile:getX(),
+                tile:getY() + lowestRow - highestRow + 1
+            )
+        end
+    end
 end
 
 return TileManager
