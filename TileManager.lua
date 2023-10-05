@@ -17,7 +17,8 @@ function TileManager.new(width, height)
         softDrop = Timer.new(0.075, false, true),
         quickShiftDelay = Timer.new(0.1, false, false),
         quickShift = Timer.new(0.05, false, true),
-        settle = Timer.new(0.3, false, false)
+        settle = Timer.new(1.5, false, false),
+        idleSettle = Timer.new(0.5, false, false)
     }
     
     self.board = {
@@ -44,8 +45,10 @@ function TileManager:update(dt)
 
     if not self:aboutToSettle() then
         self.timers.settle:stop()
+        self.timers.idleSettle:stop()
     end
-    if self.timers.settle:isFinished() then
+    
+    if self.timers.settle:isFinished() or self.timers.idleSettle:isFinished() then
         self:settle()
     end
 
@@ -223,7 +226,7 @@ function TileManager:rotateActiveTiles(isClockwise)
     if successfulRotation then
         self:moveActiveTiles(xKick, yKick)
         self.tetriminoData.rotationState = newRotationState
-        self.timers.settle:stop()
+        self.timers.idleSettle:start()
     else
         self.activeTiles = originalTiles
         self.tetriminoData.rect = originalRect
@@ -233,14 +236,19 @@ end
 function TileManager:shiftActiveTilesHorizontally(xOffset)
     if not self:areActiveTilesInImpossiblePosition(xOffset, 0) then
         self:moveActiveTiles(xOffset, 0)
+        if self:aboutToSettle() then
+            self.timers.idleSettle:start()
+        end
     end
 end
 
 function TileManager:descendActiveTiles()
+    if not self:aboutToSettle() then self:moveActiveTiles(0, 1) end
     if self:aboutToSettle() then
-        self.timers.settle:start()
-    else
-        self:moveActiveTiles(0, 1)
+        if not self.timers.idleSettle:isRunning() then
+            self.timers.settle:start()
+            self.timers.idleSettle:start()
+        end
     end
 end
 
@@ -252,6 +260,7 @@ function TileManager:settle()
     self:newTetrimino()
 
     self.timers.settle:stop()
+    self.timers.idleSettle:stop()
 end
 
 function TileManager:hardDrop()
