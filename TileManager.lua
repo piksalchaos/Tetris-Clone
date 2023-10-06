@@ -309,6 +309,12 @@ function TileManager:removeTilesInRow(row)
     while index <= #self.idleTiles do
         if self.idleTiles[index]:getY() == row-1 then
             table.remove(self.idleTiles, index)
+        elseif self.idleTiles[index]:getY() < row then
+            self.idleTiles[index]:setPosition(
+                self.idleTiles[index]:getX(),
+                self.idleTiles[index]:getY() + 1
+            )
+            index = index + 1
         else
             index = index + 1
         end
@@ -324,15 +330,6 @@ function TileManager:removeTilesInFullRows()
         self:removeTilesInRow(row)
         highestRow = row < highestRow and row or highestRow
         lowestRow = row > lowestRow and row or lowestRow
-    end
-
-    for _, tile in ipairs(self.idleTiles) do
-        if tile:getY() < lowestRow then
-            tile:setPosition(
-                tile:getX(),
-                tile:getY() + lowestRow - highestRow + 1
-            )
-        end
     end
 end
 
