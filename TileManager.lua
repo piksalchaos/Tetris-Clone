@@ -322,14 +322,8 @@ function TileManager:removeTilesInRow(row)
 end
 
 function TileManager:removeTilesInFullRows()
-    local fullRows = self:getFullRows()
-
-    local highestRow = self.board.height
-    local lowestRow = 0
-    for _, row in ipairs(fullRows) do
+    for _, row in ipairs(self:getFullRows()) do
         self:removeTilesInRow(row)
-        highestRow = row < highestRow and row or highestRow
-        lowestRow = row > lowestRow and row or lowestRow
     end
 end
 
