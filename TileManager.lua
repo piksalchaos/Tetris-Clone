@@ -2,7 +2,7 @@ local Timer = require 'Timer'
 local Counter = require 'Counter'
 local Tile = require 'Tile'
 local keybinds = require 'keybinds'
-local tetriminos = require 'tetriminos'
+local Tetrimino = require 'Tetrimino'
 
 local TileManager = {}
 TileManager.__index = TileManager
@@ -43,7 +43,6 @@ function TileManager.new(width, height)
 end
 
 function TileManager:update(dt)
-    print(self.resetCounters.shift:getCount() .. '  ' .. self.resetCounters.rotation:getCount())
     for _, timer in pairs(self.timers) do
         timer:update(dt)
     end
@@ -109,8 +108,8 @@ function TileManager:keyreleased(key)
     end
 end
 
-function TileManager:newTile(x, y, active)
-    local newTile = Tile.new(x, y)
+function TileManager:newTile(x, y, color, active)
+    local newTile = Tile.new(x, y, color)
     table.insert(self.tiles, newTile)
     if active then
         table.insert(self.activeTiles, newTile)
@@ -120,7 +119,7 @@ function TileManager:newTile(x, y, active)
 end
 
 function TileManager:newTetrimino()
-    local tetrimino = tetriminos[math.random(1, #tetriminos)]
+    local tetrimino = Tetrimino.getRandomTetrimino()
     local tetriminoTileMap = tetrimino:getTileMap()
 
     self.tetriminoData.rect.width = #tetriminoTileMap[1]
@@ -136,7 +135,7 @@ function TileManager:newTetrimino()
 
     local function newTetriminoTile(tileValue, x, y)
         if tileValue == 1 then
-            self:newTile(x, y, true)
+            self:newTile(x, y, tetrimino:getColor(), true)
         end
     end
     for row, tileValues in ipairs(tetriminoTileMap) do
@@ -289,7 +288,7 @@ end
 
 function TileManager:getFullRows()
     local rowCounts = {}
-    for i=1, self.board.height do
+    for _=1, self.board.height do
         table.insert(rowCounts, 0)
     end
     for _, tile in ipairs(self.idleTiles) do

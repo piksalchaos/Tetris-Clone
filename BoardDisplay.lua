@@ -11,6 +11,8 @@ end
 
 function BoardDisplay:drawTiles(tiles)
     for _, tile in ipairs(tiles) do
+        local r, g, b = unpack(tile:getColor())
+        love.graphics.setColor(r/255, g/255, b/255)
         love.graphics.rectangle(
             'fill',
             tile:getX() * self.tilePixelLength,
@@ -19,6 +21,7 @@ function BoardDisplay:drawTiles(tiles)
             self.tilePixelLength
         )
     end
+    love.graphics.setColor(1, 1, 1)
 end
 
 function BoardDisplay:draw(tileManager)
