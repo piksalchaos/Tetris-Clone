@@ -327,4 +327,13 @@ function TileManager:removeTilesInFullRows()
     end
 end
 
+function TileManager:getBoardDimensions()
+    return self.board.width, self.board.height
+end
+
+function TileManager:getTetriminoRect()
+    local rect = self.tetriminoData.rect
+    return rect.x, rect.y, rect.width, rect.height
+end
+
 return TileManager

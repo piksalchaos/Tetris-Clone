@@ -106,8 +106,6 @@ Tetrimino.kickTests = { -- all clockwise by default
     }
 }
 
-
-
 function Tetrimino.new(tetriminoIndex)
     local self = setmetatable({}, Tetrimino)
 

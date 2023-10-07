@@ -1,0 +1,24 @@
+Tetris guideline rules:
+https://tetris.wiki/Tetris_Guideline
+
+playfield
+
+Super Rotation System  C
+Tetromino starting positions  C
+Lock Down  C
+Piece preview  
+Hold  
+Piece colors  
+Random Generator
+Ghost piece
+Controller mappings
+Timings  N
+Levels  N
+Music  N
+Game over conditions
+Scoring  N
+T-Spin detection
+
+Legend:
+C - complete
+N - not important
