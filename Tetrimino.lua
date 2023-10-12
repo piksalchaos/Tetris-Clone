@@ -9,7 +9,7 @@ local tetriminoData = {
             {0, 0, 0, 0},
             {0, 0, 0, 0}
         },
-        {141, 192, 255}
+        {163, 239, 239}
     },
     {
         {
@@ -17,7 +17,7 @@ local tetriminoData = {
             {1, 1, 1},
             {0, 0, 0},
         },
-        {45, 17, 255}
+        {112, 112, 239}
     },
     {
         {
@@ -25,14 +25,14 @@ local tetriminoData = {
             {1, 1, 1},
             {0, 0, 0}
         },
-        {255, 162, 68}
+        {255, 210, 96}
     },
     {
         {
             {1, 1},
             {1, 1}
         },
-        {255, 249, 141}
+        {255, 247, 135}
     },
     {
         {
@@ -40,7 +40,7 @@ local tetriminoData = {
             {1, 1, 0},
             {0, 0, 0}
         },
-        {82, 255, 131}
+        {148, 239, 148}
     },
     {
         {
@@ -48,7 +48,7 @@ local tetriminoData = {
             {0, 1, 1},
             {0, 0, 0}
         },
-        {255, 18, 105}
+        {239, 112, 143}
     },
     {
         {
@@ -56,7 +56,7 @@ local tetriminoData = {
             {1, 1, 1},
             {0, 0, 0}
         },
-        {101, 30, 255}
+        {179, 122, 239}
     }
 }
 
@@ -138,7 +138,10 @@ end
 
 local tetriminos = {}
 for _, params in ipairs(tetriminoData) do
-    table.insert(tetriminos, Tetrimino.new(unpack(params)))
+    local tileMap, rgbColors = unpack(params)
+    local colors = {}
+    for _, channel in ipairs(rgbColors) do table.insert(colors, channel/255) end
+    table.insert(tetriminos, Tetrimino.new(tileMap, colors))
 end
 
 function Tetrimino.getRandomTetrimino()

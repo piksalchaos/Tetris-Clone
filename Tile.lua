@@ -12,6 +12,7 @@ end
 function Tile:getColor() return self.color end
 function Tile:getX() return self.x end
 function Tile:getY() return self.y end
+function Tile:getPosition() return self.x, self.y end
 function Tile:setPosition(x, y) self.x, self.y = x, y end
 
 return Tile

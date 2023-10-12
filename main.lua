@@ -9,7 +9,7 @@ function love.load()
     tileManager = TileManager.new()
     tileManager:newTetrimino()
     local BoardDisplay = require 'BoardDisplay'
-    boardDisplay = BoardDisplay.new()
+    boardDisplay = BoardDisplay.new(tileManager)
 end
 
 function love.update(dt)

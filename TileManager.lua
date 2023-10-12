@@ -329,6 +329,12 @@ end
 function TileManager:getBoardDimensions()
     return self.board.width, self.board.height
 end
+function TileManager:getBoardWidth()
+    return self.board.width
+end
+function TileManager:getBoardHeight()
+    return self.board.height
+end
 
 function TileManager:getTetriminoRect()
     local rect = self.tetriminoData.rect
