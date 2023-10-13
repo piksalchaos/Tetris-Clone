@@ -9,8 +9,7 @@ function BoardDisplay.new(tileManager, tileScale)
         x=0,
         y=0
     }
-    self.tileScale = tileScale or 30
-    self.shadowScaleOffset = 0.95
+    self.defaultScale = 30
 
     return self
 end
@@ -22,31 +21,58 @@ function BoardDisplay:getBoardHeight()
     return self.tileManager:getBoardHeight() * self.tileScale
 end
 
-function BoardDisplay:drawTiles(tiles, alpha)
+function BoardDisplay:applyScaleTint(scale, colorChannelTints)
+    colorChannelTints[4] = colorChannelTints[4] or 1
+
+    local colorChannels = {}
+    colorChannels = {love.graphics:getColor()}
+    for i, colorChannel in ipairs(colorChannels) do
+        local power = colorChannelTints[i]
+        colorChannels[i] = colorChannel * (scale^power/self.defaultScale^power)
+    end
+    love.graphics.setColor(unpack(colorChannels))
+end
+
+function BoardDisplay:drawBoardOutline(scale)
+    local boardWidth, boardHeight = self.tileManager:getBoardDimensions()
+    love.graphics.setColor(1, 1, 1)
+    self:applyScaleTint(scale, {1, 1, 1, 30})
+    love.graphics.rectangle(
+        'line',
+        -boardWidth/2 * scale,
+        -boardHeight/2 * scale,
+        boardWidth * scale,
+        boardHeight * scale
+    )
+end
+
+function BoardDisplay:drawTiles(tiles, scale, alpha)
     alpha = alpha or 1
     for _, tile in ipairs(tiles) do
+        local tileX = tile:getX() - self.tileManager:getBoardWidth()/2
+        local tileY = tile:getY() - self.tileManager:getBoardHeight()/2
         local r, g, b = unpack(tile:getColor())
         love.graphics.setColor(r, g, b, alpha)
-
-        local tileX = tile:getX() * self.tileScale - self:getBoardWidth()/2
-        local tileY = tile:getY() * self.tileScale - self:getBoardHeight()/2
-
+        self:applyScaleTint(scale, {15, 15, 2})
         love.graphics.rectangle(
             'fill',
-            tileX,
-            tileY,
-            self.tileScale, self.tileScale
-        )
-        love.graphics.setColor(r, g, b, alpha*0.8)
-        love.graphics.rectangle(
-            'fill',
-            self.center.x + self.shadowScaleOffset * (tileX - self.center.x),
-            self.center.y + self.shadowScaleOffset * (tileY - self.center.y),
-            self.tileScale * self.shadowScaleOffset,
-            self.tileScale * self.shadowScaleOffset
+            self.center.x + scale * (tileX - self.center.x),
+            self.center.y + scale * (tileY - self.center.y),
+            scale,
+            scale
         )
     end
     love.graphics.setColor(1, 1, 1)
+end
+
+function BoardDisplay:drawBoard(scale)
+    self:drawBoardOutline(scale)
+    if self.tileManager:aboutToSettle() then
+        self:drawTiles(self.tileManager.activeTiles, scale, 0.5)
+    else
+        self:drawTiles(self.tileManager.activeTiles, scale)
+    end
+    self:drawTiles(self.tileManager.idleTiles, scale)
 end
 
 function BoardDisplay:draw()
@@ -54,32 +80,9 @@ function BoardDisplay:draw()
         love.graphics.getWidth()/2,
         love.graphics.getHeight()/2
     )
-    love.graphics.rectangle(
-        'line',
-        -self:getBoardWidth()/2,
-        -self:getBoardHeight()/2,
-        self:getBoardWidth(),
-        self:getBoardHeight()
-    )
 
-    --[[uncomment for tetrimino rect 
-    local tetriminoRect = {tileManager:getTetriminoRect()} 
-    love.graphics.setColor(0.5, 0.5, 1, 0.25)
-    love.graphics.rectangle(
-        'fill',
-        tetriminoRect[1] * self.tileScale,
-        tetriminoRect[2] * self.tileScale,
-        tetriminoRect[3] * self.tileScale,
-        tetriminoRect[4] * self.tileScale
-    )
-    love.graphics.setColor(1, 1, 1) ]]
-
-    if self.tileManager:aboutToSettle() then
-        self:drawTiles(self.tileManager.activeTiles, 0.5)
-    else
-        self:drawTiles(self.tileManager.activeTiles)
-    end
-    self:drawTiles(self.tileManager.idleTiles)
+    self:drawBoard(self.defaultScale * 0.965)
+    self:drawBoard(self.defaultScale)
 end
 
 return BoardDisplay
