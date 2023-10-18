@@ -61,9 +61,9 @@ function TileManager:update(dt)
         self:settleActiveTiles()
     end
 
-    if love.keyboard.isDown(keybinds.moveLeft) then
+    if keybinds.moveLeft:isDown() then
         self.horizontalDirection = -1
-    elseif love.keyboard.isDown(keybinds.moveRight) then
+    elseif keybinds.moveRight:isDown() then
         self.horizontalDirection = 1
     end
 
@@ -76,30 +76,30 @@ function TileManager:update(dt)
 end
 
 function TileManager:keypressed(key)
-    if key == keybinds.moveLeft then
+    if keybinds.moveLeft:hasKey(key) then
         self:shiftActiveTilesHorizontally(-1)
         self.timers.quickShiftDelay:start()
-    elseif key == keybinds.moveRight then
+    elseif keybinds.moveRight:hasKey(key) then
         self:shiftActiveTilesHorizontally(1)
         self.timers.quickShiftDelay:start()
     end
 
-    if key == keybinds.softDrop then
+    if keybinds.softDrop:hasKey(key) then
         self:descendActiveTiles()
         self.timers.descend:stop()
         self.timers.softDrop:start()
     end
-    if key == keybinds.hardDrop then self:hardDropActiveTiles() end
-    if key == keybinds.rotateClockwise then self:rotateActiveTiles(true) end
-    if key == keybinds.rotateCounterClockwise then self:rotateActiveTiles(false) end
+    if keybinds.hardDrop:hasKey(key) then self:hardDropActiveTiles() end
+    if keybinds.rotateClockwise:hasKey(key) then self:rotateActiveTiles(true) end
+    if keybinds.rotateCounterClockwise:hasKey(key) then self:rotateActiveTiles(false) end
 end
 
 function TileManager:keyreleased(key)
-    if key == keybinds.softDrop then
+    if keybinds.softDrop:hasKey(key) then
         self.timers.descend:start()
         self.timers.softDrop:stop()
     end
-    if key == keybinds.moveLeft or key == keybinds.moveRight then
+    if keybinds.moveLeft:hasKey(key) or keybinds.moveRight:hasKey(key) then
         if self.timers.quickShift:isRunning() then
             self.timers.quickShift:stop()
         else

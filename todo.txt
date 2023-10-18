@@ -8,11 +8,11 @@ Tetromino starting positions  C
 Lock Down  C
 Piece preview  
 Hold  
-Piece colors  
+Piece colors C
 Random Generator
 Ghost piece
 Controller mappings
-Timings  N
+Timings  N 
 Levels  N
 Music  N
 Game over conditions
