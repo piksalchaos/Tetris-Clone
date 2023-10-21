@@ -147,10 +147,6 @@ function Tetrimino.new(tileMap, color, isIPiece)
 
     return self
 end
---[[ 
-function Tetrimino:getTileMap()
-    return self.tileMap
-end ]]
 
 function Tetrimino:getColor() return self.color end
 

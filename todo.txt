@@ -10,7 +10,7 @@ Piece preview C
 Hold 
 Piece colors C
 Random Generator C
-Ghost piece
+Ghost piece C
 Controller mappings
 Timings  N 
 Levels  N

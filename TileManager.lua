@@ -58,8 +58,7 @@ function TileManager:update(dt)
     end
     
     if self.timers.settle:isFinished()
-    or ((self.resetCounters.shift:isFinished() or self.resetCounters.rotation:isFinished())
-    and self:aboutToSettle()) then
+    or ((self.resetCounters.shift:isFinished() or self.resetCounters.rotation:isFinished()) and self:aboutToSettle()) then
         self:settleActiveTiles()
     end
 
@@ -185,10 +184,11 @@ function TileManager:areActiveTilesInImpossiblePosition(offsetX, offsetY)
     end)
 end
 
-function TileManager:aboutToSettle()
+function TileManager:aboutToSettle(offsetX, offsetY)
+    offsetX, offsetY = offsetX or 0, offsetY or 0
     return self:checkActiveTiles(function(tile)
-        if tile.y >= self.board.height-1 then return true end
-        if self:isTileOnIdleTiles(tile, 0, 1) then return true end
+        if tile:getY() + offsetY >= self.board.height-1 then return true end
+        if self:isTileOnIdleTiles(tile, offsetX, offsetY + 1) then return true end
         return false
     end)
 end
@@ -338,6 +338,22 @@ end
 
 function TileManager:getUpcomingTetriminos()
     return self.tetriminoManager:getUpcomingTetriminos()
+end
+
+function TileManager:getActiveTiles()
+    return self.activeTiles
+end
+
+function TileManager:getIdleTiles()
+    return self.idleTiles
+end
+
+function TileManager:getShadowYOffset()
+    local yOffset = 0
+    while not self:aboutToSettle(0, yOffset) do
+        yOffset = yOffset + 1
+    end
+    return yOffset
 end
 
 return TileManager

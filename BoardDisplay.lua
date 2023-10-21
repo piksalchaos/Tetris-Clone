@@ -51,33 +51,46 @@ function BoardDisplay:drawBoardOutline(scale)
     )
 end
 
-function BoardDisplay:drawTiles(tiles, scale, alpha)
+function BoardDisplay:drawTiles(tiles, scale, alpha, xOffset, yOffset, tileBorderSize)
     alpha = alpha or 1
+    xOffset, yOffset = xOffset or 0, yOffset or 0
+    tileBorderSize = tileBorderSize or 0
     for _, tile in ipairs(tiles) do
-        local tileX = tile:getX() - self.tileManager:getBoardWidth()/2
-        local tileY = tile:getY() - self.tileManager:getBoardHeight()/2
+        local tileX = tile:getX() - self.tileManager:getBoardWidth()/2 + xOffset
+        local tileY = tile:getY() - self.tileManager:getBoardHeight()/2 + yOffset
         local r, g, b = unpack(tile:getColor())
         love.graphics.setColor(r, g, b, alpha)
         self:applyScaleTint(scale, {15, 15, 2})
         love.graphics.rectangle(
             'fill',
-            self.center.x + scale * (tileX - self.center.x),
-            self.center.y + scale * (tileY - self.center.y),
-            scale,
-            scale
+            scale * tileX + tileBorderSize,
+            scale * tileY + tileBorderSize,
+            scale - tileBorderSize*2,
+            scale - tileBorderSize*2
         )
     end
     love.graphics.setColor(1, 1, 1)
 end
 
+function BoardDisplay:drawShadowTiles()
+    self:drawTiles(
+        self.tileManager:getActiveTiles(),
+        self.defaultScale,
+        0.35,
+        0,
+        self.tileManager:getShadowYOffset(),
+        3
+    )
+end
+
 function BoardDisplay:drawBoard(scale)
     self:drawBoardOutline(scale)
     if self.tileManager:aboutToSettle() then
-        self:drawTiles(self.tileManager.activeTiles, scale, 0.5)
+        self:drawTiles(self.tileManager:getActiveTiles(), scale, 0.5)
     else
-        self:drawTiles(self.tileManager.activeTiles, scale)
+        self:drawTiles(self.tileManager:getActiveTiles(), scale)
     end
-    self:drawTiles(self.tileManager.idleTiles, scale)
+    self:drawTiles(self.tileManager:getIdleTiles(), scale)
 end
 
 function BoardDisplay:drawUpcomingTiles()
@@ -117,13 +130,13 @@ function BoardDisplay:draw()
         love.graphics.getWidth()/2,
         love.graphics.getHeight()/2
     )
-
     self:drawBoard(self.defaultScale * 0.965)
+    self:drawShadowTiles()
     
 
     --[[ for i=0, 1, 0.1 do
         self:drawBoard(self.defaultScale * i)
-    end ]]
+    end  ]]
 
     self:drawBoard(self.defaultScale)
 
