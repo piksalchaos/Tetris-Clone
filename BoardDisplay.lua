@@ -10,6 +10,8 @@ function BoardDisplay.new(tileManager, tileScale)
         y=0
     }
     self.defaultScale = 30
+    self.upcomingTetriminoScale = 25
+    self.upcomingTetriminoBorderRect = {width = 150, height = 320}
 
     return self
 end
@@ -22,6 +24,9 @@ function BoardDisplay:getBoardHeight()
 end
 
 function BoardDisplay:applyScaleTint(scale, colorChannelTints)
+    if scale > self.defaultScale then
+        scale = self.defaultScale - (scale - self.defaultScale)
+    end
     colorChannelTints[4] = colorChannelTints[4] or 1
 
     local colorChannels = {}
@@ -75,6 +80,38 @@ function BoardDisplay:drawBoard(scale)
     self:drawTiles(self.tileManager.idleTiles, scale)
 end
 
+function BoardDisplay:drawUpcomingTiles()
+    local scale = self.upcomingTetriminoScale
+    for i, tetrimino in ipairs(self.tileManager:getUpcomingTetriminos()) do
+        local tileWidth, tileHeight = tetrimino:getRect()
+        for _, coordinate in ipairs(tetrimino:getTileCoordinates()) do
+            love.graphics.rectangle(
+                'fill',
+                (coordinate[1] - tileWidth/2)*scale,
+                ((coordinate[2] - tileHeight/2)*scale) + (i-2)*100,
+                scale,
+                scale
+            )
+        end
+    end
+end
+
+function BoardDisplay:drawUpcomingTilesPanel()
+    local rect = self.upcomingTetriminoBorderRect
+    love.graphics.rectangle(
+        'line',
+        -rect.width/2,
+        -rect.height/2,
+        rect.width,
+        rect.height
+    )
+
+    self:drawUpcomingTiles()
+    love.graphics.translate(5, 5)
+    love.graphics.setColor(1, 1, 1, 0.5)
+    self:drawUpcomingTiles()
+end
+
 function BoardDisplay:draw()
     love.graphics.translate(
         love.graphics.getWidth()/2,
@@ -82,7 +119,21 @@ function BoardDisplay:draw()
     )
 
     self:drawBoard(self.defaultScale * 0.965)
+    
+
+    --[[ for i=0, 1, 0.1 do
+        self:drawBoard(self.defaultScale * i)
+    end ]]
+
     self:drawBoard(self.defaultScale)
+
+    love.graphics.origin()
+    love.graphics.translate(
+        love.graphics.getWidth()*0.83,
+        love.graphics.getHeight()*0.5
+    )
+    
+    self:drawUpcomingTilesPanel()
 end
 
 return BoardDisplay

@@ -6,10 +6,10 @@ playfield
 Super Rotation System  C
 Tetromino starting positions  C
 Lock Down  C
-Piece preview  
-Hold  
-Piece colors  
-Random Generator
+Piece preview C
+Hold 
+Piece colors C
+Random Generator C
 Ghost piece
 Controller mappings
 Timings  N
@@ -17,7 +17,7 @@ Levels  N
 Music  N
 Game over conditions
 Scoring  N
-T-Spin detection
+T-Spin detection N
 
 Legend:
 C - complete

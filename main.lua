@@ -29,7 +29,6 @@ end
 
 function love.draw()
     boardDisplay:draw(tileManager)
-    
 end
 
 function table.copy(t, modifierFunction)

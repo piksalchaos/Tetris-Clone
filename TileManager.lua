@@ -2,7 +2,7 @@ local Timer = require 'Timer'
 local Counter = require 'Counter'
 local Tile = require 'Tile'
 local keybinds = require 'keybinds'
-local Tetrimino = require 'Tetrimino'
+local TetriminoManager = require 'TetriminoManager'
 
 local TileManager = {}
 TileManager.__index = TileManager
@@ -25,6 +25,8 @@ function TileManager.new(width, height)
         width = width or 10,
         height = height or 20
     }
+    self.tetriminoManager = TetriminoManager.new()
+
     self.tetriminoData = {}
     self.tetriminoData.rect = {x=0, y=0, width=0, height=0}
     self.tetriminoData.rotationState = 0
@@ -119,29 +121,22 @@ function TileManager:newTile(x, y, color, active)
 end
 
 function TileManager:newTetrimino()
-    local tetrimino = Tetrimino.getRandomTetrimino()
-    local tetriminoTileMap = tetrimino:getTileMap()
+    local tetrimino = self.tetriminoManager:getNextTetrimino()
 
-    self.tetriminoData.rect.width = #tetriminoTileMap[1]
-    self.tetriminoData.rect.height = #tetriminoTileMap
-
-    local xOffset =  self.board.width/2 - math.ceil(#tetriminoTileMap[1]/2)
-    local yOffset = -2
-
-    self.tetriminoData.rect.x, self.tetriminoData.rect.y = xOffset, yOffset
+    self.tetriminoData.rect.width, self.tetriminoData.rect.height = tetrimino:getRect()
+    self.tetriminoData.rect.x = self.board.width/2 - math.ceil(self.tetriminoData.rect.width/2)
+    self.tetriminoData.rect.y = -2
 
     self.tetriminoData.rotationState = 0
     self.tetriminoData.kickTests = tetrimino:getKickTests()
 
-    local function newTetriminoTile(tileValue, x, y)
-        if tileValue == 1 then
-            self:newTile(x, y, tetrimino:getColor(), true)
-        end
-    end
-    for row, tileValues in ipairs(tetriminoTileMap) do
-        for column, tileValue in ipairs(tileValues) do
-            newTetriminoTile(tileValue, xOffset + column-1, yOffset + row-1)
-        end
+    for _, coordinate in ipairs(tetrimino:getTileCoordinates()) do
+        self:newTile(
+            coordinate[1] + self.tetriminoData.rect.x,
+            coordinate[2] + self.tetriminoData.rect.y,
+            tetrimino:getColor(),
+            true
+        )
     end
 
     self.aboutToSettleLastDescension = false
@@ -339,6 +334,10 @@ end
 function TileManager:getTetriminoRect()
     local rect = self.tetriminoData.rect
     return rect.x, rect.y, rect.width, rect.height
+end
+
+function TileManager:getUpcomingTetriminos()
+    return self.tetriminoManager:getUpcomingTetriminos()
 end
 
 return TileManager
