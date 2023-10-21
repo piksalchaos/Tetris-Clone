@@ -12,7 +12,7 @@ Piece colors C
 Random Generator C
 Ghost piece
 Controller mappings
-Timings  N
+Timings  N 
 Levels  N
 Music  N
 Game over conditions
