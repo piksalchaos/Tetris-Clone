@@ -11,7 +11,7 @@ Hold
 Piece colors C
 Random Generator C
 Ghost piece C
-Controller mappings
+Controller mappings C
 Timings  N 
 Levels  N
 Music  N

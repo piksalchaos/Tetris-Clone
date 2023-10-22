@@ -348,7 +348,7 @@ function TileManager:getIdleTiles()
     return self.idleTiles
 end
 
-function TileManager:getShadowYOffset()
+function TileManager:getGhostYOffset()
     local yOffset = 0
     while not self:aboutToSettle(0, yOffset) do
         yOffset = yOffset + 1

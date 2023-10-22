@@ -189,14 +189,14 @@ function TetriminoManager:getNextTetrimino()
     if #self.tetriminoBag <= 0 then 
         for i=1, #self.tetriminos do
             table.insert(self.tetriminoBag, i)
-            io.write(i .. ' ')
+            --io.write(i .. ' ')
         end
-        print()
+        --print()
     end
     while #self.tetriminoSequence <= 3 do
         local tetriminoBagIndex = math.random(1, #self.tetriminoBag)
         local tetriminoIndex = table.remove(self.tetriminoBag, tetriminoBagIndex)
-        print(tetriminoIndex)
+        --print(tetriminoIndex)
 
         table.insert(self.tetriminoSequence, tetriminoIndex)
     end

@@ -14,6 +14,7 @@ end
 
 function love.update(dt)
     tileManager:update(dt)
+    boardDisplay:update(dt)
 end
 
 function love.keypressed(key)
