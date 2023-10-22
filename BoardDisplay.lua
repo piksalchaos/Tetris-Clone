@@ -1,3 +1,5 @@
+local keybinds = require 'keybinds'
+
 local BoardDisplay = {}
 BoardDisplay.__index = BoardDisplay
 
@@ -14,7 +16,7 @@ function BoardDisplay.new(tileManager, tileScale)
         y=0
     }
     self.scaleCenterOffsetSpeed = 5
-    self.shadowOffset = 0.04
+    self.shadowOffset = 0.03
 
     self.defaultScale = 30
     self.upcomingTetriminoScale = 25
@@ -158,12 +160,27 @@ function BoardDisplay:update(dt)
     end
 end
 
+function BoardDisplay:keypressed(key)
+    if keybinds.hardDrop:hasKey(key) then
+        self.scaleCenterOffset.y = self.scaleCenterOffset.y + 10
+    end
+    if keybinds.rotateCounterClockwise:hasKey(key) or keybinds.rotateClockwise:hasKey(key) then
+        self.scaleCenterOffset.y = self.scaleCenterOffset.y - 5
+    end
+    --[[ if keybinds.rotateCounterClockwise:hasKey(key) then
+        self.scaleCenterOffset.x = self.scaleCenterOffset.x - 10
+    end
+    if keybinds.rotateClockwise:hasKey(key) then
+        self.scaleCenterOffset.x = self.scaleCenterOffset.x + 10
+    end ]]
+end
+
 function BoardDisplay:draw()
     love.graphics.translate(
         love.graphics.getWidth()/2,
         love.graphics.getHeight()/2
     )
-    --[[ for i=0, 2, 0.05 do
+    --[[ for i=0, 2, 0.04 do
         self:drawBoard(self.defaultScale * i)
     end ]]
 

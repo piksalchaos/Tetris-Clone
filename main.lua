@@ -22,6 +22,7 @@ function love.keypressed(key)
         love.event.quit()
     end
     tileManager:keypressed(key)
+    boardDisplay:keypressed(key)
 end
 
 function love.keyreleased(key)
