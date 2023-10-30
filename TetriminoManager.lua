@@ -126,21 +126,78 @@ local kickTests = { -- all clockwise by default
 
 local Tetrimino = {}
 Tetrimino.__index = Tetrimino
+--[[ 
+local function loopThroughTableElements(tbl, func)
+    for i, element in ipairs(tbl) do
+        func(i, element)
+    end
+end ]]
+local function loopThroughMatrixElements(matrix, func)
+    for row, elements in ipairs(matrix) do
+        for column, element in ipairs(elements) do
+            func(row, column, element)
+        end
+    end
+end
 
-function Tetrimino.new(tileMap, color, isIPiece)
+local function findFirstInTable(tbl, valueToFind)
+    for i, value in ipairs(tbl) do
+        if value == valueToFind then
+            return i
+        end
+    end
+end
+
+local function changeIfAlready(oldValue, newValue, expectedOldValue)
+    if oldValue == expectedOldValue or oldValue == nil then
+        return newValue
+    else
+        return oldValue
+    end
+end
+
+local function tableSum(tbl)
+    local sum = 0
+    for _, value in ipairs(tbl) do
+        sum = sum + value
+    end
+    return sum
+end
+
+function Tetrimino.new(tileMatrix, color, isIPiece)
     local self = setmetatable({}, Tetrimino)
 
     self.tileCoordinates = {}
-    for row, tileValues in ipairs(tileMap) do
-        for column, tileValue in ipairs(tileValues) do
-            if tileValue == 1 then
-                table.insert(self.tileCoordinates, {column-1, row-1})
-            end
+
+    local tileMatrixRows = {}
+    local tileMatrixColumns = {}
+
+    loopThroughMatrixElements(tileMatrix, function(row, column, tileValue)
+        tileMatrixRows[row] = changeIfAlready(
+            tileMatrixRows[row], tileValue, 0
+        )
+        tileMatrixColumns[column] = changeIfAlready(
+            tileMatrixColumns[column], tileValue, 0
+        )
+        
+        if tileValue == 1 then
+            table.insert(self.tileCoordinates, {column-1, row-1})
         end
-    end
+    end)
+
+    self.displayRectOffset = {
+        x = findFirstInTable(tileMatrixColumns, 1) - 1,
+        y = findFirstInTable(tileMatrixRows, 1) - 1
+    }
+
+    self.displayDimensions = {
+        width = tableSum(tileMatrixColumns),
+        height = tableSum(tileMatrixRows)
+    }
+
     self.rect = {
-        width = #tileMap[1],
-        height = #tileMap
+        width = #tileMatrix[1],
+        height = #tileMatrix
     }
     self.color = color
     self.isIPiece = isIPiece
@@ -165,6 +222,14 @@ function Tetrimino:getRect()
     return self.rect.width, self.rect.height
 end
 
+function Tetrimino:getDisplayDimensions()
+    return self.displayDimensions.width, self.displayDimensions.height
+end
+
+function Tetrimino:getDisplayRectOffset()
+    return self.displayRectOffset.x, self.displayRectOffset.y
+end
+
 local TetriminoManager = {}
 TetriminoManager.__index = TetriminoManager
 
@@ -181,11 +246,13 @@ function TetriminoManager.new()
 
     self.tetriminoSequence = {}
     self.tetriminoBag = {}
+    self.lastTetriminoIndex = 0
+    self.heldTetriminoIndex = 0
 
     return self
 end
 
-function TetriminoManager:getNextTetrimino()
+function TetriminoManager:nextTetrimino()
     if #self.tetriminoBag <= 0 then 
         for i=1, #self.tetriminos do
             table.insert(self.tetriminoBag, i)
@@ -200,7 +267,21 @@ function TetriminoManager:getNextTetrimino()
 
         table.insert(self.tetriminoSequence, tetriminoIndex)
     end
-    return self.tetriminos[table.remove(self.tetriminoSequence, 1)]
+    self.lastTetriminoIndex = table.remove(self.tetriminoSequence, 1)
+    return self.tetriminos[self.lastTetriminoIndex]
+end
+
+function TetriminoManager:switchHeldTetrimino()
+    local originalHeldTetriminoIndex = self.heldTetriminoIndex
+    
+    self.heldTetriminoIndex = self.lastTetriminoIndex
+    self.lastTetriminoIndex = originalHeldTetriminoIndex
+    
+    if originalHeldTetriminoIndex == 0 then
+        return self:nextTetrimino()
+    end
+
+    return self.tetriminos[self.lastTetriminoIndex]
 end
 
 function TetriminoManager:getUpcomingTetriminos()
@@ -211,5 +292,8 @@ function TetriminoManager:getUpcomingTetriminos()
     return upcomingTetriminos
 end
 
+function TetriminoManager:getHeldTetrimino()
+    return self.tetriminos[self.heldTetriminoIndex]
+end
 
 return TetriminoManager

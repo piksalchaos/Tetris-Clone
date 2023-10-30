@@ -1,13 +1,12 @@
 Tetris guideline rules:
 https://tetris.wiki/Tetris_Guideline
 
-playfield
-
+playfield C
 Super Rotation System  C
 Tetromino starting positions  C
 Lock Down  C
 Piece preview C
-Hold 
+Hold C
 Piece colors C
 Random Generator C
 Ghost piece C

@@ -93,6 +93,10 @@ function TileManager:keypressed(key)
     if keybinds.hardDrop:hasKey(key) then self:hardDropActiveTiles() end
     if keybinds.rotateClockwise:hasKey(key) then self:rotateActiveTiles(true) end
     if keybinds.rotateCounterClockwise:hasKey(key) then self:rotateActiveTiles(false) end
+
+    if keybinds.hold:hasKey(key) then
+        self:newTetrimino(true)
+    end
 end
 
 function TileManager:keyreleased(key)
@@ -109,18 +113,20 @@ function TileManager:keyreleased(key)
     end
 end
 
-function TileManager:newTile(x, y, color, active)
+function TileManager:newActiveTile(x, y, color)
     local newTile = Tile.new(x, y, color)
     table.insert(self.tiles, newTile)
-    if active then
-        table.insert(self.activeTiles, newTile)
-    else
-        table.insert(self.idleTiles, newTile)
-    end
+    table.insert(self.activeTiles, newTile)
 end
 
-function TileManager:newTetrimino()
-    local tetrimino = self.tetriminoManager:getNextTetrimino()
+function TileManager:newTetrimino(getHeld)
+    self.activeTiles = {}
+    local tetrimino
+    if getHeld then
+        tetrimino = self.tetriminoManager:switchHeldTetrimino()
+    else
+        tetrimino = self.tetriminoManager:nextTetrimino()
+    end
 
     self.tetriminoData.rect.width, self.tetriminoData.rect.height = tetrimino:getRect()
     self.tetriminoData.rect.x = self.board.width/2 - math.ceil(self.tetriminoData.rect.width/2)
@@ -130,11 +136,10 @@ function TileManager:newTetrimino()
     self.tetriminoData.kickTests = tetrimino:getKickTests()
 
     for _, coordinate in ipairs(tetrimino:getTileCoordinates()) do
-        self:newTile(
+        self:newActiveTile(
             coordinate[1] + self.tetriminoData.rect.x,
             coordinate[2] + self.tetriminoData.rect.y,
-            tetrimino:getColor(),
-            true
+            tetrimino:getColor()
         )
     end
 
@@ -266,8 +271,7 @@ function TileManager:settleActiveTiles()
     for _, activeTile in ipairs(self.activeTiles) do
         table.insert(self.idleTiles, activeTile)
     end
-    self.activeTiles = {}
-    self:newTetrimino()
+    self:newTetrimino(false)
 
     self.timers.settle:stop()
     self.resetCounters.shift:reset()
@@ -338,6 +342,10 @@ end
 
 function TileManager:getUpcomingTetriminos()
     return self.tetriminoManager:getUpcomingTetriminos()
+end
+
+function TileManager:getHeldTetrimino()
+    return self.tetriminoManager:getHeldTetrimino()
 end
 
 function TileManager:getActiveTiles()

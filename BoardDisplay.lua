@@ -21,6 +21,8 @@ function BoardDisplay.new(tileManager, tileScale)
     self.defaultScale = 30
     self.upcomingTetriminoScale = 25
     self.upcomingTetriminoBorderRect = {width = 150, height = 320}
+    self.heldTetriminoRect = {width = 150, height = 100}
+    self.heldTetriminoScale = 30
     
     return self
 end
@@ -110,23 +112,42 @@ function BoardDisplay:drawBoard(scale)
     self:drawTiles(self.tileManager:getIdleTiles(), scale)
 end
 
-function BoardDisplay:drawUpcomingTiles()
-    local scale = self.upcomingTetriminoScale
-    for i, tetrimino in ipairs(self.tileManager:getUpcomingTetriminos()) do
-        local tileWidth, tileHeight = tetrimino:getRect()
-        for _, coordinate in ipairs(tetrimino:getTileCoordinates()) do
-            love.graphics.rectangle(
-                'fill',
-                (coordinate[1] - tileWidth/2)*scale,
-                ((coordinate[2] - tileHeight/2)*scale) + (i-2)*100,
-                scale,
-                scale
-            )
-        end
+function BoardDisplay:drawTetrimino(tetrimino, scale, xOffset, yOffset)
+    xOffset, yOffset = xOffset or 0, yOffset or 0
+    local tileWidth, tileHeight = tetrimino:getDisplayDimensions()
+    local tileXOffset, tileYOffset = tetrimino:getDisplayRectOffset()
+    for _, coordinate in ipairs(tetrimino:getTileCoordinates()) do
+        love.graphics.rectangle(
+            'fill',
+            (coordinate[1] - tileWidth/2 - tileXOffset)*scale + xOffset,
+            (coordinate[2] - tileHeight/2 - tileYOffset)*scale + yOffset,
+            scale,
+            scale
+        )
     end
 end
 
-function BoardDisplay:drawUpcomingTilesPanel()
+function BoardDisplay:drawShadedTetrimino(tetrimino, scale, xOffset, yOffset)
+    love.graphics.translate(-2.5, -2.5)
+    self:drawTetrimino(tetrimino, scale, xOffset, yOffset)
+
+    love.graphics.translate(5, 5)
+    love.graphics.setColor(1, 1, 1, 0.5)
+    self:drawTetrimino(tetrimino, scale, xOffset, yOffset)
+    
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.translate(-2.5, -2.5)
+end
+
+function BoardDisplay:drawUpcomingTetriminos()
+    for i, tetrimino in ipairs(self.tileManager:getUpcomingTetriminos()) do
+        self:drawShadedTetrimino(
+            tetrimino, self.upcomingTetriminoScale, 0, (i-2)*100
+        )
+    end
+end
+
+function BoardDisplay:drawUpcomingTetriminosPanel()
     local rect = self.upcomingTetriminoBorderRect
     love.graphics.rectangle(
         'line',
@@ -136,10 +157,20 @@ function BoardDisplay:drawUpcomingTilesPanel()
         rect.height
     )
 
-    self:drawUpcomingTiles()
-    love.graphics.translate(5, 5)
-    love.graphics.setColor(1, 1, 1, 0.5)
-    self:drawUpcomingTiles()
+    self:drawUpcomingTetriminos()
+end
+
+function BoardDisplay:drawHeldTetriminoPanel()
+    love.graphics.rectangle(
+        'line',
+        -self.heldTetriminoRect.width/2,
+        -self.heldTetriminoRect.height/2, 
+        self.heldTetriminoRect.width,
+        self.heldTetriminoRect.height)
+    local heldTetrimino = self.tileManager:getHeldTetrimino()
+    if heldTetrimino then 
+        self:drawShadedTetrimino(heldTetrimino, self.heldTetriminoScale)
+    end
 end
 
 function BoardDisplay:update(dt)
@@ -167,35 +198,30 @@ function BoardDisplay:keypressed(key)
     if keybinds.rotateCounterClockwise:hasKey(key) or keybinds.rotateClockwise:hasKey(key) then
         self.scaleCenterOffset.y = self.scaleCenterOffset.y - 5
     end
-    --[[ if keybinds.rotateCounterClockwise:hasKey(key) then
-        self.scaleCenterOffset.x = self.scaleCenterOffset.x - 10
-    end
-    if keybinds.rotateClockwise:hasKey(key) then
-        self.scaleCenterOffset.x = self.scaleCenterOffset.x + 10
-    end ]]
+end
+
+function BoardDisplay:translateOriginByScale(x, y)
+    love.graphics.origin()
+    love.graphics.translate(
+        love.graphics.getWidth() * x,
+        love.graphics.getHeight() * y
+    )
 end
 
 function BoardDisplay:draw()
-    love.graphics.translate(
-        love.graphics.getWidth()/2,
-        love.graphics.getHeight()/2
-    )
+    self:translateOriginByScale(0.5, 0.5)
     --[[ for i=0, 2, 0.04 do
         self:drawBoard(self.defaultScale * i)
     end ]]
-
     self:drawBoard(self.defaultScale * (1-self.shadowOffset))
+    self:drawBoard(self.defaultScale)
     self:drawGhostTiles()
 
-    self:drawBoard(self.defaultScale)
+    self:translateOriginByScale(0.83, 0.5)
+    self:drawUpcomingTetriminosPanel()
 
-    love.graphics.origin()
-    love.graphics.translate(
-        love.graphics.getWidth()*0.83,
-        love.graphics.getHeight()*0.5
-    )
-    
-    self:drawUpcomingTilesPanel()
+    self:translateOriginByScale(0.15, 0.3)
+    self:drawHeldTetriminoPanel()
 end
 
 return BoardDisplay
