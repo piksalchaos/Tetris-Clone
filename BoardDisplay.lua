@@ -23,6 +23,10 @@ function BoardDisplay.new(tileManager, tileScale)
     self.upcomingTetriminoBorderRect = {width = 150, height = 320}
     self.heldTetriminoRect = {width = 150, height = 100}
     self.heldTetriminoScale = 30
+
+    self.shadeEffectScaleMax = 1.15
+    self.shadeEffectScale = 1
+    self.shadeEffectExponent = 0.7
     
     return self
 end
@@ -48,14 +52,6 @@ function BoardDisplay:applyScaleTint(scale, colorChannelTints)
     love.graphics.setColor(unpack(colorChannels))
 end
 
-function BoardDisplay:multiplyColor(factor)
-    local colorChannels = {love.graphics:getColor()}
-    for i, colorChannel in ipairs(colorChannels) do
-        colorChannels[i] = colorChannel * factor
-    end
-    love.graphics.setColor(unpack(colorChannels))
-end
-
 function BoardDisplay:getCenterOffsetFromScale(scale)
     return (scale/self.defaultScale-1+self.shadowOffset/2)*self.scaleCenterOffset.x * self.defaultScale,
            (scale/self.defaultScale-1+self.shadowOffset/2)*self.scaleCenterOffset.y * self.defaultScale
@@ -70,7 +66,7 @@ function BoardDisplay:drawGrid(gridX1, gridX2, gridY1, gridY2, tileWidth, scale,
             y2*scale + yOffset
         )
     end
-    self:multiplyColor(scale/self.defaultScale/3)
+    
     for x=gridX1, gridX2, tileWidth do
         drawGridLine(x, gridY1, x, gridY2)
     end
@@ -91,12 +87,14 @@ function BoardDisplay:drawBoardOutline(scale)
         boardWidth * scale,
         boardHeight * scale
     )
-
-    self:drawGrid(
-        -boardWidth/2, boardWidth/2,
-        -boardHeight/2, boardHeight/2,
-        1, scale, xScaleOffset, yScaleOffset
-    )
+    if scale == self.defaultScale then
+        love.graphics.setColor(1, 1, 1, 0.2)
+        self:drawGrid(
+            -boardWidth/2, boardWidth/2,
+            -boardHeight/2, boardHeight/2,
+            1, scale, xScaleOffset, yScaleOffset
+        )
+    end
 end
 
 function BoardDisplay:drawTiles(tiles, scale, alpha, tileXOffset, tileYOffset, tileBorderSize)
@@ -220,11 +218,19 @@ function BoardDisplay:update(dt)
         local speed = yDistance * self.scaleCenterOffsetSpeed*dt
         self.scaleCenterOffset.y = self.scaleCenterOffset.y + speed
     end
+
+    if self.shadeEffectScale > 1 then
+        self.shadeEffectScale = self.shadeEffectScale^self.shadeEffectExponent
+    end
 end
 
 function BoardDisplay:keypressed(key)
     if keybinds.hardDrop:hasKey(key) then
         self.scaleCenterOffset.y = self.scaleCenterOffset.y + 10
+        if self.tileManager:justClearedLines() then
+            print('huh')
+            self.shadeEffectScale = self.shadeEffectScaleMax
+        end
     end
     if keybinds.rotateCounterClockwise:hasKey(key) or keybinds.rotateClockwise:hasKey(key) then
         self.scaleCenterOffset.y = self.scaleCenterOffset.y - 5
@@ -241,11 +247,10 @@ end
 
 function BoardDisplay:draw()
     self:translateOriginByScale(0.5, 0.5)
-    --[[ for i=0, 2, 0.01 do
-        self:drawBoard(self.defaultScale * i)
-    end ]]
-    --[[ self:drawBoard(1)
-    self:drawBoard(2) ]]
+
+    if self.shadeEffectScale > 1 then
+        self:drawBoard(self.defaultScale * (self.shadeEffectScale))
+    end
     self:drawBoard(self.defaultScale * (1-self.shadowOffset))
     self:drawBoard(self.defaultScale)
     self:drawGhostTiles()

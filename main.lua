@@ -8,6 +8,7 @@ function love.load()
     local TileManager = require 'TileManager'
     tileManager = TileManager.new()
     tileManager:newTetrimino()
+    
     local BoardDisplay = require 'BoardDisplay'
     boardDisplay = BoardDisplay.new(tileManager)
 end

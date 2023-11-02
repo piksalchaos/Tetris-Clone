@@ -40,6 +40,8 @@ function TileManager.new(width, height)
         shift = Counter.new(resetCounterMax),
         rotation = Counter.new(resetCounterMax)
     }
+
+    self.clearedLine = false
     
     return self
 end
@@ -305,6 +307,9 @@ function TileManager:getFullRows()
             table.insert(fullRows, row)
         end
     end
+
+    self.clearedLine = #fullRows > 0
+    
     return fullRows
 end
 
@@ -376,5 +381,7 @@ function TileManager:getGhostYOffset()
     end
     return yOffset
 end
+
+function TileManager:justClearedLines() return self.clearedLine end
 
 return TileManager
