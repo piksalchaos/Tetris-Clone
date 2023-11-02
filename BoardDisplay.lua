@@ -40,8 +40,7 @@ function BoardDisplay:applyScaleTint(scale, colorChannelTints)
     end
     colorChannelTints[4] = colorChannelTints[4] or 1
 
-    local colorChannels = {}
-    colorChannels = {love.graphics:getColor()}
+    local colorChannels = {love.graphics:getColor()}
     for i, colorChannel in ipairs(colorChannels) do
         local power = colorChannelTints[i]
         colorChannels[i] = colorChannel * (scale/self.defaultScale)^power
@@ -49,9 +48,35 @@ function BoardDisplay:applyScaleTint(scale, colorChannelTints)
     love.graphics.setColor(unpack(colorChannels))
 end
 
+function BoardDisplay:multiplyColor(factor)
+    local colorChannels = {love.graphics:getColor()}
+    for i, colorChannel in ipairs(colorChannels) do
+        colorChannels[i] = colorChannel * factor
+    end
+    love.graphics.setColor(unpack(colorChannels))
+end
+
 function BoardDisplay:getCenterOffsetFromScale(scale)
     return (scale/self.defaultScale-1+self.shadowOffset/2)*self.scaleCenterOffset.x * self.defaultScale,
            (scale/self.defaultScale-1+self.shadowOffset/2)*self.scaleCenterOffset.y * self.defaultScale
+end
+
+function BoardDisplay:drawGrid(gridX1, gridX2, gridY1, gridY2, tileWidth, scale, xOffset, yOffset)
+    local function drawGridLine(x1, y1, x2, y2)
+        love.graphics.line(
+            x1*scale + xOffset,
+            y1*scale + yOffset,
+            x2*scale + xOffset,
+            y2*scale + yOffset
+        )
+    end
+    self:multiplyColor(scale/self.defaultScale/3)
+    for x=gridX1, gridX2, tileWidth do
+        drawGridLine(x, gridY1, x, gridY2)
+    end
+    for y=gridY1, gridY2, tileWidth do
+        drawGridLine(gridX1, y, gridX2, y)
+    end
 end
 
 function BoardDisplay:drawBoardOutline(scale)
@@ -65,6 +90,12 @@ function BoardDisplay:drawBoardOutline(scale)
         -boardHeight/2 * scale + yScaleOffset,
         boardWidth * scale,
         boardHeight * scale
+    )
+
+    self:drawGrid(
+        -boardWidth/2, boardWidth/2,
+        -boardHeight/2, boardHeight/2,
+        1, scale, xScaleOffset, yScaleOffset
     )
 end
 
@@ -210,9 +241,11 @@ end
 
 function BoardDisplay:draw()
     self:translateOriginByScale(0.5, 0.5)
-    --[[ for i=0, 2, 0.04 do
+    --[[ for i=0, 2, 0.01 do
         self:drawBoard(self.defaultScale * i)
     end ]]
+    --[[ self:drawBoard(1)
+    self:drawBoard(2) ]]
     self:drawBoard(self.defaultScale * (1-self.shadowOffset))
     self:drawBoard(self.defaultScale)
     self:drawGhostTiles()

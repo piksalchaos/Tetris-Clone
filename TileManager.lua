@@ -144,6 +144,10 @@ function TileManager:newTetrimino(getHeld)
     end
 
     self.aboutToSettleLastDescension = false
+
+    if self:aboutToSettle() or self:areActiveTilesInImpossiblePosition() then
+        self:restartGame()
+    end
 end
 
 function TileManager:moveActiveTiles(relativeX, relativeY)
@@ -198,14 +202,15 @@ function TileManager:aboutToSettle(offsetX, offsetY)
     end)
 end
 
-function TileManager:testKickActiveTiles(isClockwise)
+function TileManager:kickActiveTiles(isClockwise)
     local kickTest = self.tetriminoData.kickTests[self.tetriminoData.rotationState+1]
     for _, coords in ipairs(kickTest) do
         local xKick, yKick = coords[1], -coords[2]
         if not isClockwise then xKick, yKick = -xKick, -yKick end
 
         if not self:areActiveTilesInImpossiblePosition(xKick, yKick) then
-            return true, xKick, yKick
+            self:moveActiveTiles(xKick, yKick)
+            return true
         end
     end
     return false
@@ -227,11 +232,10 @@ function TileManager:rotateActiveTiles(isClockwise)
         )
     end
 
-    local successfulRotation, xKick, yKick = self:testKickActiveTiles(isClockwise)
+    local successfulKick = self:kickActiveTiles(isClockwise)
 
     local newRotationState = (self.tetriminoData.rotationState + (isClockwise and 1 or -1)) % 4
-    if successfulRotation then
-        self:moveActiveTiles(xKick, yKick)
+    if successfulKick then
         self.tetriminoData.rotationState = newRotationState
         if self.aboutToSettleLastDescension then
             self.timers.settle:start()
@@ -291,7 +295,9 @@ function TileManager:getFullRows()
         table.insert(rowCounts, 0)
     end
     for _, tile in ipairs(self.idleTiles) do
-        rowCounts[tile:getY()+1] = rowCounts[tile:getY()+1] + 1
+        if tile:getY() <= 0 then break end
+        local rowIndex = tile:getY()+1
+        rowCounts[rowIndex] = rowCounts[rowIndex] + 1
     end
     local fullRows = {}
     for row, rowCount in ipairs(rowCounts) do
@@ -323,6 +329,13 @@ function TileManager:removeTilesInFullRows()
     for _, row in ipairs(self:getFullRows()) do
         self:removeTilesInRow(row)
     end
+end
+
+function TileManager:restartGame()
+    self.activeTiles = {}
+    self.idleTiles = {}
+    self.tiles = {}
+    self:newTetrimino()
 end
 
 function TileManager:getBoardDimensions()

@@ -13,8 +13,8 @@ Ghost piece C
 Controller mappings C
 Timings  N 
 Levels  N
-Music  N
-Game over conditions
+Music  
+Game over conditions C
 Scoring  N
 T-Spin detection N
 
