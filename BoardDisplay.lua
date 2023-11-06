@@ -26,7 +26,7 @@ function BoardDisplay.new(tileManager, tileScale)
 
     self.shadeEffectScaleMax = 1.15
     self.shadeEffectScale = 1
-    self.shadeEffectExponent = 0.7
+    self.shadeEffectExponent = 0.9
     
     return self
 end
