@@ -5,6 +5,8 @@ function love.load()
     love.graphics.setDefaultFilter('nearest', 'nearest')
     math.randomseed(os.time())
 
+    love.graphics.setFont(love.graphics.newFont('font/PressStart2P.ttf'))
+
     local TileManager = require 'TileManager'
     tileManager = TileManager.new()
     tileManager:newTetrimino()
@@ -31,6 +33,7 @@ function love.keyreleased(key)
 end
 
 function love.draw()
+    love.graphics.print('Unoriginal Block Game', 10, 10)
     boardDisplay:draw(tileManager)
 end
 

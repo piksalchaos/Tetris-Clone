@@ -3,6 +3,7 @@ local Counter = require 'Counter'
 local Tile = require 'Tile'
 local keybinds = require 'keybinds'
 local TetriminoManager = require 'TetriminoManager'
+local sounds = require 'sounds'
 
 local TileManager = {}
 TileManager.__index = TileManager
@@ -15,7 +16,7 @@ function TileManager.new(width, height)
     self.idleTiles = {}
     self.timers = {
         descend = Timer.new(0.85, true, true),
-        softDrop = Timer.new(0.075, false, true),
+        softDrop = Timer.new(0.07, false, true),
         quickShiftDelay = Timer.new(0.1, false, false),
         quickShift = Timer.new(0.05, false, true),
         settle = Timer.new(0.5, false, false)
@@ -42,6 +43,7 @@ function TileManager.new(width, height)
     }
 
     self.clearedLine = false
+    self.justSwitchedHold = false
     
     return self
 end
@@ -91,13 +93,16 @@ function TileManager:keypressed(key)
         self:descendActiveTiles()
         self.timers.descend:stop()
         self.timers.softDrop:start()
+        --sounds.descend:play()
     end
     if keybinds.hardDrop:hasKey(key) then self:hardDropActiveTiles() end
     if keybinds.rotateClockwise:hasKey(key) then self:rotateActiveTiles(true) end
     if keybinds.rotateCounterClockwise:hasKey(key) then self:rotateActiveTiles(false) end
 
-    if keybinds.hold:hasKey(key) then
+    if keybinds.hold:hasKey(key) and not self.justSwitchedHold then
         self:newTetrimino(true)
+        self.justSwitchedHold = true
+        sounds.hold:play()
     end
 end
 
@@ -260,11 +265,15 @@ function TileManager:shiftActiveTilesHorizontally(xOffset)
             self.resetCounters.rotation:increment(-self.resetCounters.shift:getCount())
             self.resetCounters.shift:reset()
         end
+        sounds.shift:stop()
+        sounds.shift:play()
     end
 end
 
 function TileManager:descendActiveTiles()
-    if not self:aboutToSettle() then self:moveActiveTiles(0, 1) end
+    if not self:aboutToSettle() then
+        self:moveActiveTiles(0, 1)
+    end
     if self:aboutToSettle() then
         if not self.timers.settle:isRunning() then
             self.timers.settle:start()
@@ -284,6 +293,11 @@ function TileManager:settleActiveTiles()
     self.resetCounters.rotation:reset()
 
     self:removeTilesInFullRows()
+
+    self.justSwitchedHold = false
+
+    sounds.drop:stop()
+    sounds.drop:play()
 end
 
 function TileManager:hardDropActiveTiles()
@@ -331,8 +345,14 @@ function TileManager:removeTilesInRow(row)
 end
 
 function TileManager:removeTilesInFullRows()
+    local clearedRow = false
     for _, row in ipairs(self:getFullRows()) do
+        clearedRow = true
         self:removeTilesInRow(row)
+    end
+
+    if clearedRow then
+        sounds.clearLine:play()
     end
 end
 
